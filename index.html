@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Умный пазл - Редактор PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --primary-hover: #FF4757;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --bg-main: #F4F9F9;
+            --bg-sidebar: #FFFFFF;
+            --text-main: #2F3542;
+            --text-muted: #747D8C;
+            --border: #E1E8ED;
+            --radius: 16px;
+            --success: #2ED573;
+            --danger: #FF4757;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* HEADER */
+        header { background: var(--secondary); padding: 12px 25px; border-bottom: 4px solid rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 10; color: white; }
+        .logo { font-weight: 900; font-size: 26px; text-shadow: 2px 2px 0px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px;}
+        .header-controls { display: flex; gap: 10px; align-items: center; }
+        
+        select, button, input[type="text"], input[type="number"], textarea { font-family: 'Nunito', sans-serif; }
+        
+        button { padding: 10px 18px; border: 2px solid transparent; border-radius: 12px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 800; transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); color: var(--text-main); box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; gap: 6px; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        button:active { transform: translateY(1px); }
+        button.primary { background: var(--primary); color: #fff; border-bottom: 3px solid #d63031; }
+        button.primary:hover { background: var(--primary-hover); }
+        button.icon-btn { padding: 10px; font-size: 18px; border-radius: 50%; width: 42px; height: 42px; }
+
+        /* WORKSPACE & SIDEBAR (Horizontal Tabs Edition) */
+        .workspace { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 480px; background: var(--bg-sidebar); border-right: 2px solid var(--border); display: flex; flex-direction: column; overflow: hidden; box-shadow: 4px 0 20px rgba(0,0,0,0.04); }
+        
+        /* ГОРИЗОНТАЛЬНЫЕ ВКЛАДКИ */
+        .sidebar-tabs-container { display: flex; overflow-x: auto; background: #f8fafc; border-bottom: 2px solid var(--border); padding: 12px; gap: 8px; flex-shrink: 0; }
+        .sidebar-tabs-container::-webkit-scrollbar { height: 6px; }
+        .sidebar-tabs-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .sidebar-tab { white-space: nowrap; padding: 10px 16px; border-radius: 20px; background: white; border: 2px solid var(--border); cursor: pointer; font-weight: 800; font-size: 13px; color: var(--text-muted); transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .sidebar-tab:hover { border-color: var(--secondary); color: var(--secondary); }
+        .sidebar-tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(255,107,107,0.3); transform: scale(1.05); }
+
+        .sidebar-content { flex: 1; overflow-y: auto; background: #fafafa; }
+        .sidebar-content::-webkit-scrollbar { width: 8px; }
+        .sidebar-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .tab-pane { display: none; padding: 25px; flex-direction: column; gap: 18px; }
+        .tab-pane.active { display: flex; animation: fadeIn 0.3s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 12px; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group select, .form-group textarea { padding: 12px 15px; border: 2px solid var(--border); border-radius: 12px; font-size: 14px; outline: none; transition: 0.2s; font-weight: 700; color: var(--text-main); background: white; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--secondary); box-shadow: 0 0 0 4px rgba(78, 205, 196, 0.1); }
+        .form-group input[type="file"] { padding: 8px; background: white; border: 2px dashed var(--border); border-radius: 12px; cursor: pointer; }
+        
+        .checkbox-label { display: flex; align-items: center; gap: 10px; font-weight: 800; cursor: pointer; font-size: 14px; }
+        .checkbox-label input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: var(--secondary); }
+        .form-group input[type="color"] { padding: 0; height: 40px; width: 100%; border: none; border-radius: 8px; cursor: pointer; }
+        
+        .form-row { display: flex; gap: 12px; }
+        .form-row > * { flex: 1; }
+        
+        .task-list { display: flex; flex-direction: column; gap: 15px; }
+        .task-card { background: white; border: 2px solid var(--border); border-radius: 16px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .task-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 800; color: var(--primary); }
+        .task-remove-btn { background: #ffeaa7; color: #d63031; border-radius: 8px; padding: 6px 12px; font-size: 12px; border:none; }
+        .task-remove-btn:hover { background: #d63031; color: white; }
+
+        .dynamic-fields-container { display: flex; flex-direction: column; gap: 10px; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+        .dynamic-row { display: flex; gap: 10px; align-items: center; }
+        .dynamic-row input[type="text"] { flex: 1; }
+        .remove-row-btn { background: #ff7675; color: white; width: 30px; height: 30px; padding: 0; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+        .zone-selectors { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 5px; }
+        .zone-btn { width: 36px; height: 36px; padding: 0; font-weight: 900; font-size: 16px; border-radius: 12px; border: 2px solid var(--border); background: #fff; color: var(--text-muted); transition: 0.2s; display:flex; justify-content:center; align-items:center; }
+        .zone-btn.created { background: #e8f8f5; color: var(--success); border-color: var(--success); }
+        .zone-btn.active { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; transform: scale(1.1); box-shadow: 0 4px 10px rgba(255,107,107,0.3); }
+
+        .memory-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 8px; }
+        .memory-item-name { font-weight: 800; font-size: 14px; flex: 1; cursor: pointer; }
+        .memory-item-actions { display: flex; gap: 6px; }
+        .memory-btn { padding: 6px; border-radius: 8px; font-size: 14px; }
+
+        /* PREVIEW AREA */
+        .preview-area { flex: 1; display: flex; flex-direction: column; padding: 25px; position: relative; background: #e0f2fe; }
+        .preview-toolbar { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
+        .preview-toolbar button { border-radius: 20px; padding: 12px 25px; font-size: 15px; font-weight: 800; background: white; color: var(--text-muted); border: 2px solid transparent; }
+        .preview-toolbar button:hover { background: white; color: var(--primary); transform: translateY(-2px); }
+        .preview-toolbar button.active { background: var(--primary); color: white; box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4); border-bottom: 3px solid #d63031; }
+        
+        .preview-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; position: relative; }
+        
+        #game-container { width: 100%; height: 100%; max-width: 1000px; max-height: 700px; background: white; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border-radius: 24px; border: 8px solid white; overflow: hidden; }
+        .game-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
+        
+        #game-layer-start { z-index: 100; background-size: cover; background-position: center; }
+        #game-layer-final { z-index: 100; background-size: cover; background-position: center; }
+        #game-layer-play { z-index: 1; }
+
+        .game-layout { display: flex; width: 100%; height: 100%; padding: 0; background: #f8fafc; position: relative; align-items: center; justify-content: center; overflow: hidden; }
+        .puzzle-board { flex: 1; width: 100%; height: 100%; position: relative; background: #ecf0f1; border: 2px solid #bdc3c7; }
+        
+        .grid-cell { position: absolute; border: 2px dashed rgba(0,0,0,0.1); box-sizing: border-box; }
+        .puzzle-piece { position: absolute; box-sizing: border-box; cursor: grab; background-repeat: no-repeat; box-shadow: 3px 3px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 28px; text-shadow: 2px 2px 0px rgba(0,0,0,0.5); user-select: none; border: 3px solid rgba(255,255,255,0.8); border-radius: 12px; z-index: 10; transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .puzzle-piece:active { cursor: grabbing; z-index: 50; transform: scale(1.05); transition: none; }
+        .puzzle-piece.solved { box-shadow: none; border: none; cursor: default; z-index: 5; color: transparent; text-shadow: none; border-radius: 0; }
+        
+        .drag-ui-el { position: absolute; z-index: 60; font-weight: 900; transition: box-shadow 0.2s; cursor: move; }
+        .edit-active .drag-ui-el { box-shadow: 0 0 0 4px var(--primary) !important; }
+        .edit-active .drag-ui-el:hover { box-shadow: 0 0 0 6px var(--primary-hover) !important; }
+        .drag-ui-el input[type=range] { cursor: pointer; accent-color: var(--primary); flex: 1; min-width: 50px; }
+        
+        .secret-word-card { position: absolute; color: #2F3542; font-weight: 900; box-shadow: 0 12px 30px rgba(0,0,0,0.25); z-index: 70; display: none; text-align: center; border: 5px solid #fff; cursor: move; transition: opacity 0.2s; text-transform: uppercase; transform: translate(-50%, -50%); }
+        
+        #draw-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
+        .edit-active #draw-canvas { pointer-events: auto; cursor: crosshair; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
+        .modal { background: white; padding: 35px; border-radius: 24px; width: 600px; max-width: 90%; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); border: 4px solid var(--primary); max-height: 90vh; overflow-y: auto; }
+        .modal h3 { font-weight: 900; color: var(--primary); font-size: 24px; margin-bottom: 5px; }
+        .modal textarea { width: 100%; height: 120px; resize: vertical; font-family: monospace; padding: 15px; border-radius: 12px; border: 2px solid var(--border); outline: none; font-size: 14px; background: #f8fafc; }
+        .modal textarea:focus { border-color: var(--secondary); }
+        
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate(-50%, -50%) translateX(-4px); } 20%, 80% { transform: translate(-50%, -50%) translateX(5px); } 30%, 50%, 70% { transform: translate(-50%, -50%) translateX(-8px); } 40%, 60% { transform: translate(-50%, -50%) translateX(8px); } }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo" data-i18n="editorTitle">🧩 Умный пазл</div>
+        <div class="header-controls">
+            <button class="icon-btn" onclick="undoAction()" title="Отменить действие">↩️</button>
+            <select id="lang-select" style="margin-right: 10px;">
+                <option value="ru">🇷🇺 RU</option>
+                <option value="en">🇬🇧 EN</option>
+                <option value="de">🇩🇪 DE</option>
+                <option value="fr">🇫🇷 FR</option>
+            </select>
+            <input type="file" id="import-json" accept=".json" class="hidden">
+            <button onclick="document.getElementById('import-json').click()" data-i18n="importBtn">📂 Импорт</button>
+            <button id="export-json" data-i18n="exportJsonBtn">💾 Экспорт</button>
+            <button id="export-genially" data-i18n="geniallyBtn">🚀 Genially iframe</button>
+            <button class="primary" id="export-html" data-i18n="exportHtmlBtn">⬇️ Скачать HTML</button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <aside class="sidebar">
+            <div class="sidebar-tabs-container" id="editor-tabs">
+                <button class="sidebar-tab active" data-target="tab-project">📁 Проект</button>
+                <button class="sidebar-tab" data-target="tab-general">🖼️ Общие</button>
+                <button class="sidebar-tab" data-target="tab-tasks">📝 Задания</button>
+                <button class="sidebar-tab" data-target="tab-styles">🎨 Стили</button>
+                <button class="sidebar-tab" data-target="tab-zones">🕵️ Зоны & Баллы</button>
+                <button class="sidebar-tab" data-target="tab-screens">🎬 Экраны & Звук</button>
+            </div>
+
+            <div class="sidebar-content">
+                
+                <!-- Вкладка: Проект -->
+                <div class="tab-pane active" id="tab-project">
+                    <button onclick="resetSettings()" style="width:100%; border-color:var(--danger); color:var(--danger);" data-i18n="resetBtn">⚠️ Сброс всех настроек</button>
+                    <hr style="border: 0; border-top: 2px dashed var(--border); margin: 5px 0;">
+                    <label style="font-size: 12px; font-weight: 900; color: var(--text-muted); text-transform: uppercase;" data-i18n="memoryBank">💾 Шаблоны игр (Memory Bank)</label>
+                    <div class="form-row">
+                        <input type="text" id="template-name" placeholder="Имя шаблона" data-i18n="templateName">
+                        <button onclick="saveTemplateToBank()" class="primary" data-i18n="saveTpl">Сохранить</button>
+                    </div>
+                    <div id="memory-bank-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+
+                <!-- Вкладка: Общие -->
+                <div class="tab-pane" id="tab-general">
+                    <div class="form-group">
+                        <label data-i18n="bgImage">Фоновое изображение (Пазл)</label>
+                        <input type="file" id="setting-bg" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="logoImage">Логотип (на поле и старте)</label>
+                        <input type="file" id="setting-logo" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="logoSize">Размер логотипа в игре (%)</label>
+                        <input type="range" id="setting-logo-size" min="5" max="100" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Размер логотипа на старте (px)</label>
+                        <input type="number" id="setting-start-logo-size" value="120">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="puzzlePieces">Количество частей</label>
+                        <select id="setting-pieces">
+                            <option value="4">2x2 (4)</option><option value="6">3x2 (6)</option><option value="9">3x3 (9)</option>
+                            <option value="12">4x3 (12)</option><option value="16">4x4 (16)</option><option value="20">5x4 (20)</option>
+                            <option value="24">6x4 (24)</option><option value="25">5x5 (25)</option><option value="30">6x5 (30)</option>
+                        </select>
+                    </div>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="setting-show-labels" checked>
+                        <span data-i18n="showLabels">Показывать номера на пазлах</span>
+                    </label>
+                    <div class="form-group">
+                        <label data-i18n="customLabels">Подписи к частям (через запятую)</label>
+                        <input type="text" id="setting-labels" placeholder="1, 2, 3, 4">
+                    </div>
+                </div>
+
+                <!-- Вкладка: Задания -->
+                <div class="tab-pane" id="tab-tasks">
+                    <p style="font-size:12px; color:var(--text-muted); font-weight:700;" data-i18n="taskDesc">Если заданий меньше, чем пазлов, они будут зациклены.</p>
+                    <div style="display:flex; gap:10px;">
+                        <button id="add-task-btn" class="primary" style="flex:1;" data-i18n="addTaskBtn">+ Добавить задание</button>
+                        <button onclick="openBulkModal()" style="flex:1; background:var(--secondary); color:white; border-color:var(--secondary);">📦 Массовая загрузка</button>
+                    </div>
+                    <div id="tasks-container" class="task-list"></div>
+                </div>
+
+                <!-- Вкладка: Стили -->
+                <div class="tab-pane" id="tab-styles">
+                    <label data-i18n="startScreen" style="font-weight:900; color:var(--primary);">Стартовый экран</label>
+                    <div class="form-row">
+                        <div class="form-group"><select id="style-start-font"><option value="Nunito">Nunito</option><option value="sans-serif">Sans-serif</option><option value="Comic Sans MS">Comic Sans</option></select></div>
+                        <div class="form-group"><input type="number" id="style-start-size" value="32" title="Размер"></div>
+                        <div class="form-group"><input type="color" id="style-start-color" value="#2F3542" title="Цвет"></div>
+                    </div>
+                    <label data-i18n="questionsText" style="font-weight:900; color:var(--primary);">Текст вопросов</label>
+                    <div class="form-row">
+                        <div class="form-group"><select id="style-task-font"><option value="Nunito">Nunito</option><option value="sans-serif">Sans-serif</option><option value="Comic Sans MS">Comic Sans</option></select></div>
+                        <div class="form-group"><input type="number" id="style-task-size" value="24"></div>
+                        <div class="form-group"><input type="color" id="style-task-color" value="#2F3542"></div>
+                    </div>
+                    <label data-i18n="answersText" style="font-weight:900; color:var(--primary);">Текст ответов</label>
+                    <div class="form-row">
+                        <div class="form-group"><select id="style-ans-font"><option value="Nunito">Nunito</option><option value="sans-serif">Sans-serif</option><option value="Comic Sans MS">Comic Sans</option></select></div>
+                        <div class="form-group"><input type="number" id="style-ans-size" value="18"></div>
+                        <div class="form-group"><input type="color" id="style-ans-color" value="#2F3542"></div>
+                    </div>
+                    <label data-i18n="finalScreen" style="font-weight:900; color:var(--primary);">Экран финала</label>
+                    <div class="form-row">
+                        <div class="form-group"><select id="style-fin-font"><option value="Nunito">Nunito</option><option value="sans-serif">Sans-serif</option><option value="Comic Sans MS">Comic Sans</option></select></div>
+                        <div class="form-group"><input type="number" id="style-fin-size" value="45"></div>
+                        <div class="form-group"><input type="color" id="style-fin-color" value="#2F3542"></div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 2px dashed var(--border); margin: 5px 0;">
+
+                    <!-- НОВЫЙ БЛОК: СТИЛИ ЦЕНТРАЛЬНОЙ КАРТОЧКИ (ПЛАШКИ) -->
+                    <label style="font-weight: 900; color: var(--primary);">Стили центральных карточек (Старт / Финал)</label>
+                    <div class="form-row">
+                        <div class="form-group"><label style="font-size:10px;">Цвет фона плашки</label><input type="color" id="style-panel-bg" value="#ffffff"></div>
+                        <div class="form-group"><label style="font-size:10px;">Цвет текста плашки</label><input type="color" id="style-panel-color" value="#2F3542"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label style="font-size:10px;">Скругление углов (px)</label><input type="number" id="style-panel-radius" value="24"></div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 2px dashed var(--border); margin: 5px 0;">
+
+                    <label data-i18n="frameSettings" style="font-weight: 900; color: var(--primary);">Рамка вокруг пазла</label>
+                    <div class="form-row">
+                        <div class="form-group"><label style="font-size:10px;">Размер / Толщина (px)</label><input type="number" id="style-frame-padding" value="40"></div>
+                        <div class="form-group"><label style="font-size:10px;">Цвет рамки</label><input type="color" id="style-frame-color" value="#ecf0f1"></div>
+                    </div>
+
+                    <label data-i18n="uiBtnSettings" style="font-weight: 900; color: var(--primary); margin-top:10px;">Управляющие кнопки UI (Очки, Таймер, Звук)</label>
+                    <div class="form-row">
+                        <div class="form-group"><select id="style-uibtn-font"><option value="Nunito">Nunito</option><option value="sans-serif">Sans-serif</option><option value="Comic Sans MS">Comic Sans</option></select></div>
+                        <div class="form-group"><input type="number" id="style-uibtn-size" value="18" title="Размер шрифта"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label style="font-size:10px;">Цвет текста / рамки</label><input type="color" id="style-uibtn-color" value="#4ECDC4"></div>
+                        <div class="form-group"><label style="font-size:10px;">Цвет фона</label><input type="color" id="style-uibtn-bg" value="#ffffff"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label style="font-size:10px;">Ширина (px)</label><input type="number" id="style-uibtn-width" value="160"></div>
+                        <div class="form-group"><label style="font-size:10px;">Высота (px)</label><input type="number" id="style-uibtn-height" value="46"></div>
+                    </div>
+
+                    <label data-i18n="secretCardStyle" style="font-weight: 900; color: var(--primary); margin-top:10px;">Стиль карточек-определений</label>
+                    <div class="form-row">
+                        <div class="form-group"><select id="style-secret-font"><option value="Nunito">Nunito</option><option value="sans-serif">Sans-serif</option><option value="Comic Sans MS">Comic Sans</option></select></div>
+                        <div class="form-group"><input type="number" id="style-secret-size" value="22" title="Размер шрифта"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label style="font-size:10px;">Цвет текста</label><input type="color" id="style-secret-color" value="#2F3542"></div>
+                        <div class="form-group"><label style="font-size:10px;">Цвет фона</label><input type="color" id="style-secret-bg" value="#FFE66D"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label style="font-size:10px;">Отступы (px)</label><input type="number" id="style-secret-padding" value="18"></div>
+                        <div class="form-group"><label style="font-size:10px;">Скругление (px)</label><input type="number" id="style-secret-radius" value="20"></div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Зоны & Баллы -->
+                <div class="tab-pane" id="tab-zones">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="scoreFirst">Очки: За 1-ю попытку</label>
+                            <input type="number" id="setting-score-first" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="scoreNext">Очки: Со 2-й попытки</label>
+                            <input type="number" id="setting-score-next" value="5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="scorePenalty">Штраф за неверное место</label>
+                        <input type="number" id="setting-score-penalty" value="2">
+                    </div>
+                    <hr style="border: 0; border-top: 2px dashed var(--border); margin: 5px 0;">
+                    <label data-i18n="secretZones" style="font-weight:900;">🕵️ Секретные зоны (до 10)</label>
+                    <p style="font-size:12px; color:var(--text-muted); font-weight:700;" data-i18n="secretZonesDesc">В режиме "Edit" выберите номер зоны и кликайте по полю, чтобы выделить область.</p>
+                    <div class="form-group">
+                        <div id="zone-selectors" class="zone-selectors"></div>
+                    </div>
+                    <button id="btn-clear-polygon" style="background:#ff7675; color:white;" data-i18n="clearZone">Очистить выбранную зону</button>
+                    <div class="form-group">
+                        <label data-i18n="secretWord">Слово-определение для зоны</label>
+                        <input type="text" id="setting-secret-word" placeholder="Сюрприз!">
+                    </div>
+                </div>
+
+                <!-- Вкладка: Экраны & Звук -->
+                <div class="tab-pane" id="tab-screens">
+                    <div class="form-group"><label data-i18n="startBg">Фон Старта</label><input type="file" id="setting-start-bg" accept="image/*"></div>
+                    <div class="form-group"><label data-i18n="startTitle">Заголовок старта</label><input type="text" id="setting-start-title" value="Собери пазл!"></div>
+                    <div class="form-group"><label data-i18n="startText">Текст старта</label><textarea id="setting-start-text">Отвечай на вопросы и ставь части на место!</textarea></div>
+                    <hr style="border: 0; border-top: 2px dashed var(--border); margin: 5px 0;">
+                    <div class="form-group"><label data-i18n="finalBg">Фон Финала</label><input type="file" id="setting-final-bg" accept="image/*"></div>
+                    <div class="form-group"><label data-i18n="finalTitle">Заголовок финала</label><input type="text" id="setting-final-title" value="Отличная работа!"></div>
+                    <div class="form-group"><label data-i18n="slogan">Мотивационный слоган</label><input type="text" id="setting-slogan" value="Ты супер!"></div>
+                    <div class="form-group"><label data-i18n="reward">Награда (Текст или Эмодзи)</label><input type="text" id="setting-reward" value="🏆 Золотой кубок"></div>
+                    <hr style="border: 0; border-top: 2px dashed var(--border); margin: 5px 0;">
+                    <div class="form-group"><label data-i18n="bgm">Фоновая музыка (BGM)</label><input type="file" id="setting-bgm" accept="audio/*"></div>
+                    <div class="form-group"><label data-i18n="timerType">Таймер</label>
+                        <select id="setting-timer-type"><option value="none" data-i18n="none">Нет</option><option value="stopwatch" data-i18n="stopwatch">Секундомер</option><option value="countdown" data-i18n="countdown">Обратный отсчет</option></select>
+                    </div>
+                    <div class="form-group"><label data-i18n="timerSec">Время (сек)</label><input type="number" id="setting-timer-val" value="60"></div>
+                </div>
+
+            </div>
+        </aside>
+
+        <main class="preview-area">
+            <div class="preview-toolbar">
+                <button class="mode-btn" data-mode="edit" data-i18n="modeEdit">🛠 Edit (UI / Зоны)</button>
+                <button class="mode-btn" data-mode="start" data-i18n="modeStart">ЭКРАН СТАРТ</button>
+                <button class="mode-btn active" data-mode="game" data-i18n="modeGame">ИГРОВОЙ ПРОЦЕСС</button>
+                <button class="mode-btn" data-mode="final" data-i18n="modeFinal">ЭКРАН ФИНАЛ</button>
+            </div>
+            
+            <div class="preview-wrapper">
+                <div id="game-container">
+                    <div id="game-layer-play" class="game-layer"></div>
+                    <div id="game-layer-start" class="game-layer hidden"></div>
+                    <div id="game-layer-final" class="game-layer hidden"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно массовой загрузки -->
+    <div id="bulk-modal" class="modal-overlay hidden">
+        <div class="modal" style="width: 700px;">
+            <h3>📦 Массовая загрузка заданий</h3>
+            <p style="font-size:13px; color:#666;">Каждая строка = одно задание. Убедитесь, что строки в полях совпадают.</p>
+            
+            <div class="form-group">
+                <label>Тип задания</label>
+                <select id="bulk-type">
+                    <option value="1">Один верный</option>
+                    <option value="2">Несколько верных</option>
+                    <option value="3">Слова по порядку</option>
+                    <option value="4">Выпадающий список</option>
+                    <option value="5">Найди пару</option>
+                    <option value="6">Найди лишнее</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>📝 Вопросы / Текст (Каждый вопрос с новой строки)</label>
+                <textarea id="bulk-q" placeholder="Вопрос 1...&#10;Вопрос 2..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>✅ Верные ответы (Каждый ответ с новой строки. Если их несколько - через запятую. Для пар - левая сторона)</label>
+                <textarea id="bulk-c" placeholder="Ответ 1...&#10;Ответ 2..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>❌ Ложные ответы (Ошибочные варианты через запятую. Для пар - правая сторона)</label>
+                <textarea id="bulk-f" placeholder="Ложный 1, Ложный 2...&#10;Ложный 3, Ложный 4..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top:10px;">
+                <button class="primary" onclick="executeBulkImport()">Загрузить задания</button>
+                <button onclick="document.getElementById('bulk-modal').classList.add('hidden')">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно кода -->
+    <div id="code-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h3 id="code-modal-title" data-i18n="codeTitle">Код для вставки</h3>
+            <p style="font-size: 13px; color: #666;" data-i18n="geniallyNote">Этот код оптимизирован для вставки через инструмент "Вставить -> Код" в Genially.</p>
+            <textarea id="code-modal-content" readonly></textarea>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="primary" id="copy-code-btn" data-i18n="copyBtn">Копировать</button>
+                <button onclick="document.getElementById('code-modal').classList.add('hidden')" data-i18n="closeBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === ЛОКАЛИЗАЦИЯ И СЛОВАРИ ===
+        const dict = {
+            ru: { editorTitle: "🧩 Умный пазл", importBtn: "📂 Импорт", exportJsonBtn: "💾 Экспорт", geniallyBtn: "🚀 Genially iframe", exportHtmlBtn: "⬇️ HTML", settingsTitle: "⚙️ Настройки", bgImage: "Фоновое изображение", logoImage: "Логотип", logoSize: "Размер логотипа (%)", showLabels: "Номера пазлов", customLabels: "Подписи к частям", puzzlePieces: "Количество частей", addTaskBtn: "+ Добавить задание", taskDesc: "Задания зациклятся, если их мало.", scoreFirst: "Очки: 1-я попытка", scoreNext: "Очки: 2-я попытка", scorePenalty: "Штраф", secretZones: "🕵️ Секретные зоны", secretZonesDesc: "Кликайте по полю в режиме Edit.", chooseZone: "Выбор зоны", clearZone: "Очистить", secretWord: "Слово для зоны", startBg: "Фон Старта", startTitle: "Заголовок старта", startText: "Текст старта", finalBg: "Фон Финала", finalTitle: "Заголовок финала", slogan: "Слоган", reward: "Награда", startScreen: "Старт", questionsText: "Вопросы", answersText: "Ответы", finalScreen: "Финал", secretCardStyle: "Карточки секретов", frameSettings: "Рамка", uiBtnSettings: "UI Кнопки", bgm: "Музыка", timerType: "Таймер", none: "Нет", stopwatch: "Секундомер", countdown: "Отсчет", timerSec: "Время (сек)", modeEdit: "🛠 Edit", modeStart: "СТАРТ", modeGame: "ИГРА", modeFinal: "ФИНАЛ", codeTitle: "Код Genially", copyBtn: "Копировать", closeBtn: "Закрыть", geniallyNote: "Вставка в Genially", resetBtn: "Сброс", saveTpl: "Сохранить", templateName: "Имя", taskName: "Задание", qText: "Вопрос", ansBtn: "Ответить", points: "Баллы", timeOut: "Время вышло!", correctAns: "Верно:" },
+            en: { editorTitle: "🧩 Smart Puzzle", importBtn: "📂 Import", exportJsonBtn: "💾 Export JSON", geniallyBtn: "🚀 Genially", exportHtmlBtn: "⬇️ HTML", settingsTitle: "⚙️ Settings", bgImage: "Background", logoImage: "Logo", logoSize: "Logo Size (%)", showLabels: "Show Numbers", customLabels: "Labels", puzzlePieces: "Pieces", addTaskBtn: "+ Add Task", taskDesc: "Tasks will loop.", scoreFirst: "Score: 1st Try", scoreNext: "Score: 2nd Try", scorePenalty: "Penalty", secretZones: "🕵️ Secret Zones", secretZonesDesc: "Click board in Edit mode.", chooseZone: "Select Zone", clearZone: "Clear", secretWord: "Secret Word", startBg: "Start BG", startTitle: "Start Title", startText: "Start Text", finalBg: "Final BG", finalTitle: "Final Title", slogan: "Slogan", reward: "Reward", startScreen: "Start Screen", questionsText: "Questions", answersText: "Answers", finalScreen: "Final Screen", secretCardStyle: "Secret Cards", frameSettings: "Frame", uiBtnSettings: "UI Buttons", bgm: "BGM", timerType: "Timer", none: "None", stopwatch: "Stopwatch", countdown: "Countdown", timerSec: "Time (sec)", modeEdit: "🛠 Edit", modeStart: "START", modeGame: "GAME", modeFinal: "FINAL", codeTitle: "Code", copyBtn: "Copy", closeBtn: "Close", geniallyNote: "Paste in Genially.", resetBtn: "Reset", saveTpl: "Save", templateName: "Name", taskName: "Task", qText: "Question", ansBtn: "Submit", points: "Score", timeOut: "Time's up!", correctAns: "Correct:" }
+        };
+
+        const defaultTexts = {
+            ru: { startTitle: 'Собери пазл!', startText: 'Отвечай на вопросы и ставь части на место!', finalTitle: 'Отличная работа!', slogan: 'Ты супер!', reward: '🏆 Золотой кубок' },
+            en: { startTitle: 'Solve the Puzzle!', startText: 'Answer questions to place pieces!', finalTitle: 'Great Job!', slogan: 'You are awesome!', reward: '🏆 Gold Cup' }
+        };
+
+        function getText(key) { return dict[state.lang] ? (dict[state.lang][key] || dict['ru'][key] || key) : key; }
+
+        function applyLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const k = el.getAttribute('data-i18n');
+                if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = getText(k);
+                else el.innerText = getText(k);
+            });
+            renderTasksList(); renderPreviewMode(); renderMemoryBank();
+        }
+
+        // === STATE ===
+        const defaultState = {
+            lang: 'ru', showLabels: true, labels: '1, 2, 3, 4',
+            bgImage: '', logoImage: '', bgm: '', startBgImage: '', finalBgImage: '', 
+            startTitle: defaultTexts.ru.startTitle, startText: defaultTexts.ru.startText, finalTitle: defaultTexts.ru.finalTitle, slogan: defaultTexts.ru.slogan, reward: defaultTexts.ru.reward,
+            pieces: 4, tasks: [],
+            timerType: 'none', timerVal: 60,
+            startLogoSize: 120,
+            scoreConfig: { first: 10, next: 5, penalty: 2 },
+            styles: { 
+                start: { font: 'Nunito', size: 36, color: '#2F3542' }, 
+                task: { font: 'Nunito', size: 24, color: '#2F3542' }, 
+                ans: { font: 'Nunito', size: 18, color: '#2F3542' }, 
+                fin: { font: 'Nunito', size: 45, color: '#2F3542' },
+                secret: { font: 'Nunito', size: 22, color: '#2F3542', bg: '#FFE66D', padding: 18, radius: 20 },
+                frame: { padding: 40, color: '#ecf0f1' },
+                uibtn: { font: 'Nunito', size: 18, color: '#4ECDC4', bg: '#ffffff', width: 140, height: 46 },
+                panel: { bg: '#ffffff', color: '#2F3542', radius: 24 } // <-- Стили плашек
+            },
+            secretAreas: Array.from({length: 10}, () => ({ polygon: [], word: '', cardPos: { x: 50, y: 50 } })),
+            activeSecretZoneIndex: 0,
+            uiPos: { score: {x: 50, y: 5}, timer: {x: 90, y: 5}, logo: {x: 10, y: 10, size: 15}, volume: {x: 10, y: 90} }
+        };
+
+        let state = JSON.parse(JSON.stringify(defaultState));
+        let historyStack = []; let historyIndex = -1; let isUndoing = false;
+        
+        let currentMode = 'game'; 
+        let bgmAudioEditor = new Audio(); bgmAudioEditor.loop = true;
+        let globalVolume = 1.0;
+
+        function mergeState(parsed) {
+            let newState = JSON.parse(JSON.stringify(defaultState));
+            function deepMerge(target, source) {
+                for (const key in source) {
+                    if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                        if (!target[key]) target[key] = {};
+                        deepMerge(target[key], source[key]);
+                    } else if (source[key] !== undefined) {
+                        target[key] = source[key];
+                    }
+                }
+            }
+            if (parsed) deepMerge(newState, parsed);
+            return newState;
+        }
+        
+        function formatTime(sec) {
+            let m = Math.floor(sec/60).toString().padStart(2,'0'); let s = (sec%60).toString().padStart(2,'0'); return m+':'+s;
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'correct') { osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.3 * globalVolume, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
+            else if (type === 'wrong') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3); gain.gain.setValueAtTime(0.3 * globalVolume, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+        }
+
+        function pushHistory() {
+            if (isUndoing) return;
+            const s = JSON.stringify(state);
+            if (historyIndex >= 0 && historyStack[historyIndex] === s) return;
+            historyStack = historyStack.slice(0, historyIndex + 1);
+            historyStack.push(s);
+            if (historyStack.length > 50) historyStack.shift(); else historyIndex++;
+        }
+
+        window.undoAction = function() {
+            if (historyIndex > 0) {
+                isUndoing = true; historyIndex--;
+                state = JSON.parse(historyStack[historyIndex]);
+                syncUiWithState(); localStorage.setItem('smartPuzzleEditorPro', JSON.stringify(state)); updatePreview();
+                isUndoing = false;
+            }
+        };
+
+        window.resetSettings = function() {
+            if(confirm(getText('confirmReset'))) {
+                state = JSON.parse(JSON.stringify(defaultState));
+                syncUiWithState(); saveState(); pushHistory();
+            }
+        };
+
+        function saveState(noHistory = false) { 
+            localStorage.setItem('smartPuzzleEditorPro', JSON.stringify(state)); 
+            if(!noHistory) pushHistory();
+            updatePreview(); 
+        }
+        
+        function loadState() {
+            const saved = localStorage.getItem('smartPuzzleEditorPro');
+            if (saved) { try { state = mergeState(JSON.parse(saved)); } catch (e) { console.error(e); } }
+            pushHistory();
+        }
+
+        function syncUiWithState() {
+            const byId = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val; };
+            byId('lang-select', state.lang);
+            byId('setting-pieces', state.pieces); 
+            byId('setting-labels', state.labels);
+            document.getElementById('setting-show-labels').checked = state.showLabels;
+            byId('setting-score-first', state.scoreConfig.first); byId('setting-score-next', state.scoreConfig.next); byId('setting-score-penalty', state.scoreConfig.penalty);
+            byId('setting-start-title', state.startTitle); byId('setting-start-text', state.startText); byId('setting-final-title', state.finalTitle);
+            byId('setting-slogan', state.slogan); byId('setting-reward', state.reward);
+            byId('setting-timer-type', state.timerType); byId('setting-timer-val', state.timerVal);
+            byId('setting-logo-size', state.uiPos.logo.size);
+            byId('setting-start-logo-size', state.startLogoSize || 120);
+            
+            const setNestedVal = (id, keyPath) => {
+                const el = document.getElementById(id);
+                if(!el) return;
+                let keys = keyPath.split('.');
+                let current = state;
+                for (let i = 0; i < keys.length - 1; i++) { if (current[keys[i]] === undefined) return; current = current[keys[i]]; }
+                el.value = current[keys[keys.length - 1]] || '';
+            };
+
+            ['start', 'task', 'ans', 'fin', 'secret', 'frame', 'uibtn', 'panel'].forEach(prefix => {
+                setNestedVal(`style-${prefix}-font`, `styles.${prefix}.font`);
+                setNestedVal(`style-${prefix}-size`, `styles.${prefix}.size`);
+                setNestedVal(`style-${prefix}-color`, `styles.${prefix}.color`);
+                if(document.getElementById(`style-${prefix}-bg`)) setNestedVal(`style-${prefix}-bg`, `styles.${prefix}.bg`);
+                if(document.getElementById(`style-${prefix}-padding`)) setNestedVal(`style-${prefix}-padding`, `styles.${prefix}.padding`);
+                if(document.getElementById(`style-${prefix}-radius`)) setNestedVal(`style-${prefix}-radius`, `styles.${prefix}.radius`);
+                if(document.getElementById(`style-${prefix}-width`)) setNestedVal(`style-${prefix}-width`, `styles.${prefix}.width`);
+                if(document.getElementById(`style-${prefix}-height`)) setNestedVal(`style-${prefix}-height`, `styles.${prefix}.height`);
+            });
+            
+            renderTasksList(); renderZoneSelectors(); renderMemoryBank();
+            document.getElementById('setting-secret-word').value = state.secretAreas[state.activeSecretZoneIndex].word || '';
+            applyLanguage();
+        }
+
+        // --- Вкладки Редактора ---
+        function initEditorTabs() {
+            document.querySelectorAll('.sidebar-tab').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.sidebar-tab').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(btn.getAttribute('data-target')).classList.add('active');
+                });
+            });
+        }
+
+        // --- Memory Bank ---
+        window.saveTemplateToBank = function() {
+            const name = document.getElementById('template-name').value.trim() || 'Шаблон ' + new Date().toLocaleTimeString();
+            let bank = JSON.parse(localStorage.getItem('smartPuzzleMemoryBank') || '[]');
+            bank.push({ name: name, date: Date.now(), data: JSON.stringify(state) });
+            localStorage.setItem('smartPuzzleMemoryBank', JSON.stringify(bank));
+            document.getElementById('template-name').value = '';
+            renderMemoryBank();
+        };
+
+        window.loadTemplateFromBank = function(idx) {
+            let bank = JSON.parse(localStorage.getItem('smartPuzzleMemoryBank') || '[]');
+            if(bank[idx]) { state = mergeState(JSON.parse(bank[idx].data)); syncUiWithState(); saveState(); renderPreviewMode(); }
+        };
+
+        window.deleteTemplateFromBank = function(idx) {
+            let bank = JSON.parse(localStorage.getItem('smartPuzzleMemoryBank') || '[]');
+            bank.splice(idx, 1); localStorage.setItem('smartPuzzleMemoryBank', JSON.stringify(bank)); renderMemoryBank();
+        };
+
+        function renderMemoryBank() {
+            let bank = JSON.parse(localStorage.getItem('smartPuzzleMemoryBank') || '[]');
+            let list = document.getElementById('memory-bank-list'); list.innerHTML = '';
+            bank.forEach((item, idx) => {
+                let div = document.createElement('div'); div.className = 'memory-item';
+                div.innerHTML = `<div class="memory-item-name" onclick="loadTemplateFromBank(${idx})">📄 ${item.name}</div>
+                                 <div class="memory-item-actions"><button class="memory-btn" onclick="deleteTemplateFromBank(${idx})" style="color:#d63031;">🗑</button></div>`;
+                list.appendChild(div);
+            });
+        }
+
+        function renderZoneSelectors() {
+            const container = document.getElementById('zone-selectors'); if(!container) return; container.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                let btn = document.createElement('button'); btn.className = 'zone-btn'; btn.innerText = i + 1;
+                let isCreated = state.secretAreas[i] && state.secretAreas[i].polygon.length > 2;
+                if(isCreated) btn.classList.add('created');
+                if(state.activeSecretZoneIndex === i) btn.classList.add('active');
+                btn.onclick = () => { state.activeSecretZoneIndex = i; document.getElementById('setting-secret-word').value = state.secretAreas[i].word || ''; saveState(); renderZoneSelectors(); renderGameLayer(); };
+                container.appendChild(btn);
+            }
+        }
+
+        function shufflePieces() {
+            const count = parseInt(state.pieces); let order = Array.from({length: count}, (_, i) => i);
+            let isSorted = true;
+            while(isSorted && count > 1) {
+                for(let i = count - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+                isSorted = order.every((val, i) => val === i);
+            }
+            gameState.shuffledOrder = order;
+        }
+
+        function initListeners() {
+            initEditorTabs();
+
+            document.getElementById('lang-select').addEventListener('change', (e) => { 
+                let oldLang = state.lang;
+                state.lang = e.target.value; 
+                ['startTitle', 'startText', 'finalTitle', 'slogan', 'reward'].forEach(k => {
+                    if (state[k] === defaultTexts[oldLang]?.[k]) { state[k] = defaultTexts[state.lang]?.[k] || defaultTexts.en[k]; }
+                });
+                saveState(); applyLanguage(); syncUiWithState(); updatePreview();
+            });
+            
+            document.getElementById('setting-show-labels').addEventListener('change', (e) => { state.showLabels = e.target.checked; saveState(); });
+
+            const bindInput = (id, keyPath, isNum = false) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', (e) => {
+                    let val = isNum ? Number(e.target.value) : e.target.value;
+                    let keys = keyPath.split('.');
+                    let current = state;
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        if(current[keys[i]] === undefined) current[keys[i]] = {};
+                        current = current[keys[i]];
+                    }
+                    current[keys[keys.length - 1]] = val;
+                    if(id === 'setting-pieces') { shufflePieces(); renderTasksList(); }
+                    if(id === 'setting-logo-size' || id === 'setting-start-logo-size') { renderGameLayer(); updatePreview(); }
+                    saveState();
+                });
+            };
+
+            bindInput('setting-pieces', 'pieces'); 
+            bindInput('setting-labels', 'labels');
+            bindInput('setting-score-first', 'scoreConfig.first', true); bindInput('setting-score-next', 'scoreConfig.next', true); bindInput('setting-score-penalty', 'scoreConfig.penalty', true);
+            bindInput('setting-start-title', 'startTitle'); bindInput('setting-start-text', 'startText'); bindInput('setting-final-title', 'finalTitle');
+            bindInput('setting-slogan', 'slogan'); bindInput('setting-reward', 'reward');
+            bindInput('setting-timer-type', 'timerType'); bindInput('setting-timer-val', 'timerVal', true);
+            bindInput('setting-logo-size', 'uiPos.logo.size', true);
+            bindInput('setting-start-logo-size', 'startLogoSize', true);
+
+            ['start', 'task', 'ans', 'fin', 'secret', 'frame', 'uibtn', 'panel'].forEach(prefix => {
+                bindInput(`style-${prefix}-font`, `styles.${prefix}.font`);
+                bindInput(`style-${prefix}-size`, `styles.${prefix}.size`, true);
+                bindInput(`style-${prefix}-color`, `styles.${prefix}.color`);
+                if (document.getElementById(`style-${prefix}-bg`)) bindInput(`style-${prefix}-bg`, `styles.${prefix}.bg`);
+                if (document.getElementById(`style-${prefix}-padding`)) bindInput(`style-${prefix}-padding`, `styles.${prefix}.padding`, true);
+                if (document.getElementById(`style-${prefix}-radius`)) bindInput(`style-${prefix}-radius`, `styles.${prefix}.radius`, true);
+                if (document.getElementById(`style-${prefix}-width`)) bindInput(`style-${prefix}-width`, `styles.${prefix}.width`, true);
+                if (document.getElementById(`style-${prefix}-height`)) bindInput(`style-${prefix}-height`, `styles.${prefix}.height`, true);
+            });
+
+            document.getElementById('setting-secret-word').addEventListener('input', (e) => { state.secretAreas[state.activeSecretZoneIndex].word = e.target.value; saveState(true); renderGameLayer(); });
+
+            const bindFile = (id, key) => {
+                document.getElementById(id).addEventListener('change', (e) => {
+                    const r = new FileReader(); r.onload = (ev) => { state[key] = ev.target.result; saveState(); };
+                    if (e.target.files[0]) r.readAsDataURL(e.target.files[0]);
+                });
+            };
+            bindFile('setting-bg', 'bgImage'); bindFile('setting-logo', 'logoImage'); bindFile('setting-bgm', 'bgm');
+            bindFile('setting-start-bg', 'startBgImage'); bindFile('setting-final-bg', 'finalBgImage');
+
+            document.getElementById('btn-clear-polygon').addEventListener('click', () => { state.secretAreas[state.activeSecretZoneIndex].polygon = []; saveState(); renderZoneSelectors(); renderGameLayer(); });
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); 
+                    btn.classList.add('active'); 
+                    currentMode = btn.getAttribute('data-mode');
+                    
+                    if (currentMode === 'game' && state.bgm) { bgmAudioEditor.src = state.bgm; bgmAudioEditor.play().catch(e=>console.log("Audio blocked")); } else { bgmAudioEditor.pause(); }
+                    
+                    if(currentMode === 'game') {
+                        gameState.solvedPieces = []; gameState.activeTaskPiece = null; gameState.score = 0; gameState.correctCount = 0;
+                        gameState.timer = state.timerType === 'countdown' ? parseInt(state.timerVal) : 0;
+                        clearInterval(gameState.timerInterval);
+                        shufflePieces();
+                        if (state.timerType !== 'none') {
+                            gameState.timerInterval = setInterval(() => {
+                                if (state.timerType === 'countdown') {
+                                    gameState.timer--;
+                                    if (gameState.timer <= 0) { clearInterval(gameState.timerInterval); alert(getText('timeOut')); }
+                                } else { gameState.timer++; }
+                                const timeEl = document.getElementById('preview-timer-val');
+                                if(timeEl) timeEl.innerText = formatTime(gameState.timer);
+                            }, 1000);
+                        }
+                    } else { clearInterval(gameState.timerInterval); }
+                    renderPreviewMode();
+                });
+            });
+        }
+
+        // === MASS IMPORT ===
+        window.openBulkModal = function() {
+            document.getElementById('bulk-modal').classList.remove('hidden');
+        };
+        window.executeBulkImport = function() {
+            const type = document.getElementById('bulk-type').value;
+            const qLines = document.getElementById('bulk-q').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            const cLines = document.getElementById('bulk-c').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            const fLines = document.getElementById('bulk-f').value.split('\n').map(s=>s.trim()).filter(s=>s);
+
+            const count = qLines.length;
+            for(let i=0; i<count; i++) {
+                let task = { id: Date.now()+i, type: type, question: qLines[i], options: [], correct: '0', pairs: [] };
+                
+                let cAns = (cLines[i] || '').split(',').map(s=>s.trim()).filter(s=>s);
+                let fAns = (fLines[i] || '').split(',').map(s=>s.trim()).filter(s=>s);
+
+                if (type === '1' || type === '4' || type === '6') {
+                    task.options = [(cAns[0] || 'Верно'), ...fAns];
+                    task.correct = ['0'];
+                } else if (type === '2') {
+                    task.options = [...cAns, ...fAns];
+                    task.correct = cAns.map((_, idx) => idx.toString());
+                } else if (type === '3') {
+                    task.options = cAns.length > 0 ? cAns : (cLines[i]||'').split(' ').filter(s=>s);
+                } else if (type === '5') {
+                    let pairs = [];
+                    for(let j=0; j<cAns.length; j++) {
+                        pairs.push({ a: cAns[j], b: fAns[j] || ('B'+j) });
+                    }
+                    if(pairs.length===0) pairs.push({a:'A',b:'B'});
+                    task.pairs = pairs;
+                }
+                state.tasks.push(task);
+            }
+            document.getElementById('bulk-q').value = ''; document.getElementById('bulk-c').value = ''; document.getElementById('bulk-f').value = '';
+            saveState(); renderTasksList();
+            document.getElementById('bulk-modal').classList.add('hidden');
+        };
+
+        // === TASKS: Dynamic Fields Logic ===
+        const taskTypes = { '1': 'tCorrect', '2': 'tMulti', '3': 'tOrder', '4': 'tSelect', '5': 'tPairs', '6': 'tOdd' };
+
+        document.getElementById('add-task-btn').addEventListener('click', () => {
+            state.tasks.push({ id: Date.now(), type: '1', question: 'Новый вопрос', options: ['Вариант 1', 'Вариант 2'], correct: '0', pairs: [{a: 'A', b: 'B'}] });
+            saveState(); renderTasksList();
+        });
+
+        function renderTasksList() {
+            const container = document.getElementById('tasks-container'); container.innerHTML = '';
+            state.tasks.forEach((task, index) => {
+                if(!task.options) task.options = task.data ? task.data.split(',').map(s=>s.trim()) : ['Опция 1', 'Опция 2'];
+                if(!task.pairs) task.pairs = [{a:'A', b:'B'}];
+
+                const el = document.createElement('div'); el.className = 'task-card';
+                let typeOpts = Object.entries(taskTypes).map(([k,v]) => `<option value="${k}" ${task.type===k?'selected':''}>${getText(v)}</option>`).join('');
+                
+                let dynamicUI = '';
+                if(task.type === '5') {
+                    dynamicUI += `<div style="font-size:12px; margin-bottom:5px; color:#666;">Пары:</div>`;
+                    task.pairs.forEach((p, pIdx) => {
+                        dynamicUI += `<div class="dynamic-row"><input type="text" value="${p.a}" onchange="updatePair(${index}, ${pIdx}, 'a', this.value)" placeholder="A"> <input type="text" value="${p.b}" onchange="updatePair(${index}, ${pIdx}, 'b', this.value)" placeholder="B"> <button class="remove-row-btn" onclick="removePair(${index}, ${pIdx})">X</button></div>`;
+                    });
+                    dynamicUI += `<button onclick="addPair(${index})" style="margin-top:10px; font-size:12px;">+ Добавить пару</button>`;
+                } else if(task.type === '3') {
+                    dynamicUI += `<div style="font-size:12px; margin-bottom:5px; color:#666;">Слова в правильном порядке:</div>`;
+                    task.options.forEach((opt, oIdx) => {
+                        dynamicUI += `<div class="dynamic-row"><input type="text" value="${opt}" onchange="updateOpt(${index}, ${oIdx}, this.value)"> <button class="remove-row-btn" onclick="removeOpt(${index}, ${oIdx})">X</button></div>`;
+                    });
+                    dynamicUI += `<button onclick="addOpt(${index})" style="margin-top:10px; font-size:12px;">+ Добавить слово</button>`;
+                } else {
+                    dynamicUI += `<div style="font-size:12px; margin-bottom:5px; color:#666;">Варианты (отметьте верные):</div>`;
+                    const correctArr = Array.isArray(task.correct) ? task.correct : (task.correct ? task.correct.toString().split(',').map(s=>s.trim()) : ['0']);
+                    task.options.forEach((opt, oIdx) => {
+                        let isChecked = correctArr.includes(oIdx.toString());
+                        let inputType = (task.type === '2') ? 'checkbox' : 'radio';
+                        dynamicUI += `<div class="dynamic-row">
+                            <input type="${inputType}" name="task_${index}_corr" ${isChecked?'checked':''} onchange="setCorrect(${index}, ${oIdx}, this.checked, '${task.type}')">
+                            <input type="text" value="${opt}" onchange="updateOpt(${index}, ${oIdx}, this.value)">
+                            <button class="remove-row-btn" onclick="removeOpt(${index}, ${oIdx})">X</button>
+                        </div>`;
+                    });
+                    dynamicUI += `<button onclick="addOpt(${index})" style="margin-top:10px; font-size:12px;">+ Добавить вариант</button>`;
+                }
+
+                el.innerHTML = `
+                    <div class="task-card-header"><span>${getText('taskName')} ${index+1}</span><button class="task-remove-btn" onclick="deleteTask(${index})">Удалить</button></div>
+                    <div class="form-group" style="margin-bottom:15px;">
+                        <select onchange="updateTask(${index}, 'type', this.value)">${typeOpts}</select>
+                        <input type="text" value="${task.question}" onchange="updateTask(${index}, 'question', this.value)" placeholder="${getText('qText')}">
+                    </div>
+                    <div class="dynamic-fields-container">${dynamicUI}</div>
+                `;
+                container.appendChild(el);
+            });
+        }
+        
+        window.updateTask = (idx, key, val) => { state.tasks[idx][key] = val; saveState(); renderTasksList(); };
+        window.deleteTask = (idx) => { state.tasks.splice(idx, 1); saveState(); renderTasksList(); };
+        window.updateOpt = (tIdx, oIdx, val) => { state.tasks[tIdx].options[oIdx] = val; saveState(true); };
+        window.addOpt = (tIdx) => { state.tasks[tIdx].options.push('Новый вариант'); saveState(); renderTasksList(); };
+        window.removeOpt = (tIdx, oIdx) => { state.tasks[tIdx].options.splice(oIdx, 1); saveState(); renderTasksList(); };
+        window.updatePair = (tIdx, pIdx, key, val) => { state.tasks[tIdx].pairs[pIdx][key] = val; saveState(true); };
+        window.addPair = (tIdx) => { state.tasks[tIdx].pairs.push({a:'А', b:'Б'}); saveState(); renderTasksList(); };
+        window.removePair = (tIdx, pIdx) => { state.tasks[tIdx].pairs.splice(pIdx, 1); saveState(); renderTasksList(); };
+        window.setCorrect = (tIdx, oIdx, checked, type) => {
+            let task = state.tasks[tIdx];
+            let corr = Array.isArray(task.correct) ? task.correct : (task.correct ? task.correct.toString().split(',').map(s=>s.trim()) : []);
+            if(type === '2') {
+                if(checked) { if(!corr.includes(oIdx.toString())) corr.push(oIdx.toString()); } 
+                else { corr = corr.filter(v => v !== oIdx.toString()); }
+            } else { corr = [oIdx.toString()]; }
+            task.correct = corr; saveState(true);
+        };
+
+        // === GAME LOGIC & RENDERING ===
+        let gameState = { solvedPieces: [], activeTaskPiece: null, targetDropIndex: null, taskAttempts: 0, score: 0, correctCount: 0, isDragging: false, timer: 0, timerInterval: null, shuffledOrder: [] };
+
+        function renderPreviewMode() {
+            const playLayer = document.getElementById('game-layer-play'); playLayer.classList.remove('hidden');
+            const startLayer = document.getElementById('game-layer-start'); const finalLayer = document.getElementById('game-layer-final');
+            startLayer.classList.add('hidden'); finalLayer.classList.add('hidden');
+
+            if(currentMode === 'start') startLayer.classList.remove('hidden');
+            else if(currentMode === 'final') finalLayer.classList.remove('hidden');
+            
+            if(currentMode === 'edit') playLayer.classList.add('edit-active');
+            else playLayer.classList.remove('edit-active');
+            
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const pStyle = state.styles.panel;
+            const panelCSS = `background:${pStyle.bg}; color:${pStyle.color}; border-radius:${pStyle.radius}px; padding:40px; box-shadow:0 15px 45px rgba(0,0,0,0.15);`;
+
+            const startLayer = document.getElementById('game-layer-start');
+            startLayer.style.backgroundImage = state.startBgImage ? `url(${state.startBgImage})` : 'none';
+            startLayer.innerHTML = `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; ${panelCSS} max-width:90%;">
+                ${state.logoImage ? `<img src="${state.logoImage}" style="max-height:${state.startLogoSize || 120}px; margin-bottom:20px; border-radius:12px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">` : ''}
+                <h1 style="font-family:'${state.styles.start.font}'; font-size:${state.styles.start.size}px; color:${state.styles.start.color}; margin-bottom:15px;">${state.startTitle}</h1>
+                <p style="font-family:'${state.styles.start.font}'; font-size:${Math.max(12, state.styles.start.size - 6)}px; color:${state.styles.start.color};">${state.startText}</p>
+                <button style="margin-top:20px; font-family:'${state.styles.uibtn.font}'; background:var(--primary); color:white; border:none; padding:12px 30px; font-size:18px; font-weight:800; border-radius:12px; cursor:pointer;">${getText('modeStart')}</button>
+            </div>`;
+
+            const finalLayer = document.getElementById('game-layer-final');
+            finalLayer.style.backgroundImage = state.finalBgImage ? `url(${state.finalBgImage})` : 'none';
+            
+            finalLayer.innerHTML = `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; ${panelCSS} max-width:90%;">
+                <h1 style="font-family:'${state.styles.fin.font}'; font-size:${state.styles.fin.size}px; color:${state.styles.fin.color};">${state.finalTitle}</h1>
+                <h2 style="color:var(--primary); margin: 15px 0; font-size:32px;">${state.slogan}</h2>
+                <div style="font-size: 60px; margin-bottom: 20px;">${state.reward}</div>
+                <p style="font-size: 24px; font-weight: 800;">⭐ ${getText('points')}: ${gameState.score}</p>
+                <p style="font-size: 18px; margin-bottom: 25px; color:#666;">🎯 ${getText('correctAns')} ${gameState.correctCount} / ${state.pieces}</p>
+                <div style="border: 4px dashed #bdc3c7; width: 140px; height: 140px; margin: 0 auto; display:flex; align-items:center; justify-content:center; color:#999; border-radius:16px;">[QR CODE]</div>
+            </div>`;
+
+            renderGameLayer();
+        }
+
+        function setupUIDrag(el, key) {
+            let sx, sy, isD = false;
+            el.onmousedown = (e) => {
+                if(currentMode !== 'edit') return;
+                isD = true; sx = e.clientX; sy = e.clientY;
+                document.onmousemove = (me) => {
+                    if(!isD) return;
+                    let dx = me.clientX - sx, dy = me.clientY - sy; sx = me.clientX; sy = me.clientY;
+                    let par = el.parentElement.getBoundingClientRect();
+                    let nx = ((el.offsetLeft + dx) / par.width) * 100; let ny = ((el.offsetTop + dy) / par.height) * 100;
+                    nx = Math.max(0, Math.min(95, nx)); ny = Math.max(0, Math.min(95, ny));
+                    el.style.left = nx + '%'; el.style.top = ny + '%';
+                    state.uiPos[key] = { x: nx, y: ny, size: state.uiPos[key].size || 15 };
+                };
+                document.onmouseup = () => { isD = false; document.onmousemove = null; document.onmouseup = null; saveState(); };
+            };
+        }
+
+        function applyUiBtnStyles(el) {
+            const s = state.styles.uibtn;
+            el.style.fontFamily = s.font; el.style.fontSize = s.size + 'px'; el.style.color = s.color; el.style.backgroundColor = s.bg;
+            el.style.width = s.width + 'px'; el.style.height = s.height + 'px';
+            el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
+            el.style.borderRadius = '16px'; el.style.border = '3px solid ' + s.color; el.style.boxSizing = 'border-box'; el.style.padding = '0 10px';
+        }
+
+        function renderGameLayer() {
+            const layer = document.getElementById('game-layer-play'); layer.innerHTML = '';
+            const layout = document.createElement('div'); layout.className = 'game-layout';
+            
+            layout.style.padding = state.styles.frame.padding + 'px';
+            layout.style.backgroundColor = state.styles.frame.color;
+
+            const board = document.createElement('div'); board.className = 'puzzle-board'; board.id = 'puzzle-board';
+            
+            if(state.bgImage && currentMode === 'edit') { board.style.backgroundImage = `url(${state.bgImage})`; board.style.backgroundSize = 'cover'; board.style.backgroundPosition = 'center'; } 
+            else { board.style.backgroundImage = 'none'; }
+            layout.appendChild(board); layer.appendChild(layout);
+
+            if (state.logoImage) {
+                const logoEl = document.createElement('img'); logoEl.className = 'drag-ui-el'; logoEl.src = state.logoImage;
+                logoEl.style.left = state.uiPos.logo.x + '%'; logoEl.style.top = state.uiPos.logo.y + '%';
+                logoEl.style.width = state.uiPos.logo.size + '%';
+                setupUIDrag(logoEl, 'logo'); layer.appendChild(logoEl);
+            }
+
+            const scoreBoard = document.createElement('div'); scoreBoard.className = 'drag-ui-el';
+            scoreBoard.id = 'ui-score'; scoreBoard.innerText = `⭐ ${getText('points')}: ${gameState.score}`;
+            scoreBoard.style.left = state.uiPos.score.x + '%'; scoreBoard.style.top = state.uiPos.score.y + '%';
+            applyUiBtnStyles(scoreBoard);
+            setupUIDrag(scoreBoard, 'score'); layer.appendChild(scoreBoard);
+            
+            if(state.timerType !== 'none') {
+                const timerBoard = document.createElement('div'); timerBoard.id = 'ui-timer'; timerBoard.className = 'drag-ui-el';
+                timerBoard.innerHTML = `⏱ <span id="preview-timer-val" style="margin-left:5px;">${formatTime(gameState.timer || (state.timerType === 'countdown' ? state.timerVal : 0))}</span>`;
+                timerBoard.style.left = state.uiPos.timer.x + '%'; timerBoard.style.top = state.uiPos.timer.y + '%';
+                applyUiBtnStyles(timerBoard);
+                setupUIDrag(timerBoard, 'timer'); layer.appendChild(timerBoard);
+            }
+
+            if (state.bgm || currentMode === 'edit') {
+                const volEl = document.createElement('div'); volEl.className = 'drag-ui-el';
+                volEl.style.left = state.uiPos.volume.x + '%'; volEl.style.top = state.uiPos.volume.y + '%';
+                volEl.innerHTML = `🔊 <input type="range" min="0" max="1" step="0.1" value="${globalVolume}" style="margin-left:8px; flex:1; min-width:50px;">`;
+                if(currentMode !== 'edit') { volEl.querySelector('input').oninput = (e) => { globalVolume = e.target.value; bgmAudioEditor.volume = globalVolume; }; }
+                applyUiBtnStyles(volEl);
+                setupUIDrag(volEl, 'volume'); layer.appendChild(volEl);
+            }
+
+            state.secretAreas.forEach((area, idx) => {
+                if(area.polygon.length < 3 || !area.word) return;
+                const wordCard = document.createElement('div');
+                wordCard.className = 'secret-word-card drag-ui-el';
+                wordCard.id = 'secret-word-card-' + idx;
+                wordCard.innerText = area.word;
+                
+                wordCard.style.fontFamily = state.styles.secret.font; wordCard.style.fontSize = state.styles.secret.size + 'px';
+                wordCard.style.color = state.styles.secret.color; wordCard.style.background = state.styles.secret.bg;
+                wordCard.style.padding = state.styles.secret.padding + 'px ' + (state.styles.secret.padding * 2) + 'px';
+                wordCard.style.borderRadius = state.styles.secret.radius + 'px';
+
+                wordCard.style.left = (area.cardPos ? area.cardPos.x : 50) + '%'; wordCard.style.top = (area.cardPos ? area.cardPos.y : 50) + '%';
+                
+                if (currentMode === 'edit') {
+                    wordCard.style.display = 'block'; wordCard.style.opacity = (idx === state.activeSecretZoneIndex) ? '1' : '0.6';
+                    wordCard.style.zIndex = (idx === state.activeSecretZoneIndex) ? '75' : '70';
+                    let sx, sy, isD = false;
+                    wordCard.onmousedown = (e) => {
+                        isD = true; sx = e.clientX; sy = e.clientY; state.activeSecretZoneIndex = idx;
+                        renderZoneSelectors(); document.getElementById('setting-secret-word').value = area.word || '';
+                        document.querySelectorAll('.secret-word-card').forEach((c, i) => { c.style.opacity = (i === idx) ? '1' : '0.6'; c.style.zIndex = (i === idx) ? '75' : '70'; });
+                        document.onmousemove = (me) => {
+                            if(!isD) return; let dx = me.clientX - sx, dy = me.clientY - sy; sx = me.clientX; sy = me.clientY;
+                            let par = wordCard.parentElement.getBoundingClientRect();
+                            let nx = ((wordCard.offsetLeft + dx) / par.width) * 100; let ny = ((wordCard.offsetTop + dy) / par.height) * 100;
+                            nx = Math.max(0, Math.min(100, nx)); ny = Math.max(0, Math.min(100, ny));
+                            wordCard.style.left = nx + '%'; wordCard.style.top = ny + '%'; area.cardPos = { x: nx, y: ny };
+                        };
+                        document.onmouseup = () => { isD = false; document.onmousemove = null; document.onmouseup = null; saveState(); };
+                    };
+                }
+                layer.appendChild(wordCard);
+            });
+
+            const canvas = document.createElement('canvas'); canvas.id = 'draw-canvas'; board.appendChild(canvas);
+            function drawBoardSafe() {
+                const bw = board.offsetWidth, bh = board.offsetHeight;
+                if (bw === 0) { setTimeout(drawBoardSafe, 50); return; }
+                canvas.width = bw; canvas.height = bh;
+                drawPolygon(canvas, bw, bh); createPuzzlePieces(board, bw, bh);
+            }
+            setTimeout(drawBoardSafe, 50);
+
+            if (currentMode === 'edit') {
+                canvas.onclick = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const px = ((e.clientX - rect.left) / canvas.width) * 100; const py = ((e.clientY - rect.top) / canvas.height) * 100;
+                    state.secretAreas[state.activeSecretZoneIndex].polygon.push({x: px, y: py});
+                    drawPolygon(canvas, canvas.width, canvas.height); saveState(); renderZoneSelectors();
+                };
+            }
+
+            if(gameState.activeTaskPiece !== null) renderTaskPopup(layer);
+            checkSecEditor(); 
+        }
+
+        function drawPolygon(canvas, w, h) {
+            const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, w, h);
+            state.secretAreas.forEach((area, idx) => {
+                if(area.polygon.length === 0) return;
+                ctx.beginPath();
+                area.polygon.forEach((pt, i) => { const px = (pt.x / 100) * w, py = (pt.y / 100) * h; if(i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py); });
+                ctx.closePath();
+                if(currentMode === 'edit') {
+                    let isActive = (idx === state.activeSecretZoneIndex);
+                    ctx.fillStyle = isActive ? 'rgba(255, 215, 0, 0.4)' : 'rgba(46, 204, 113, 0.3)';
+                    ctx.fill(); ctx.strokeStyle = isActive ? '#FFA502' : '#2ecc71'; ctx.lineWidth = isActive ? 4 : 2; ctx.stroke();
+                } else { ctx.fillStyle = 'transparent'; ctx.fill(); }
+            });
+        }
+
+        function createPuzzlePieces(board, bw, bh) {
+            const count = parseInt(state.pieces);
+            let cols = 2, rows = 2;
+            if(count===6){cols=3;rows=2;} if(count===9){cols=3;rows=3;} if(count===12){cols=4;rows=3;}
+            if(count===16){cols=4;rows=4;} if(count===20){cols=5;rows=4;} if(count===24){cols=6;rows=4;} if(count===25){cols=5;rows=5;} if(count===30){cols=6;rows=5;}
+            
+            const cw = bw / cols, ch = bh / rows; const labels = state.labels ? state.labels.split(',').map(s=>s.trim()) : [];
+            let order = gameState.shuffledOrder; if(!order || order.length !== count) { order = Array.from({length: count}, (_, i) => i); gameState.shuffledOrder = order; }
+
+            for(let i=0; i<count; i++) {
+                const c = i % cols, r = Math.floor(i / cols); const x = c * cw, y = r * ch;
+                const startIdx = order[i]; const sc = startIdx % cols, sr = Math.floor(startIdx / cols); const sx = sc * cw, sy = sr * ch;
+                
+                const cell = document.createElement('div'); cell.className = 'grid-cell';
+                cell.style.width = cw+'px'; cell.style.height = ch+'px'; cell.style.left = x+'px'; cell.style.top = y+'px';
+                cell.dataset.index = i; board.appendChild(cell);
+
+                const piece = document.createElement('div'); piece.className = 'puzzle-piece'; piece.id = 'piece-'+i; piece.dataset.index = i;
+                if(state.showLabels) piece.innerText = labels[i] || (i+1);
+                
+                if (state.bgImage) { piece.style.backgroundImage = `url(${state.bgImage})`; piece.style.backgroundSize = `${bw}px ${bh}px`; piece.style.backgroundPosition = `-${x}px -${y}px`; } 
+                else { piece.style.backgroundColor = 'var(--primary)'; }
+                piece.style.width = cw+'px'; piece.style.height = ch+'px';
+                
+                if(currentMode === 'edit') {
+                    piece.style.opacity = '0.35'; piece.style.pointerEvents = 'none'; piece.style.left = sx+'px'; piece.style.top = sy+'px'; board.appendChild(piece);
+                } else if(gameState.solvedPieces.includes(i)) {
+                    piece.classList.add('solved'); piece.style.left = x+'px'; piece.style.top = y+'px'; board.appendChild(piece);
+                } else {
+                    piece.style.position = 'absolute'; piece.style.left = sx+'px'; piece.style.top = sy+'px'; piece.dataset.startX = sx; piece.dataset.startY = sy; board.appendChild(piece);
+                    setupDrag(piece, board, cw, ch, i);
+                }
+            }
+        }
+
+        function setupDrag(piece, board, tw, th, pieceIndex) {
+            let startX, startY, origLeft, origTop, isDragging = false;
+            const onDown = (e) => {
+                if(gameState.activeTaskPiece !== null || piece.classList.contains('solved')) return;
+                isDragging = true; const touch = e.touches ? e.touches[0] : e; startX = touch.clientX; startY = touch.clientY;
+                origLeft = parseFloat(piece.style.left); origTop = parseFloat(piece.style.top); piece.style.zIndex = 50; e.preventDefault();
+            };
+            const onMove = (e) => {
+                if(!isDragging) return; const touch = e.touches ? e.touches[0] : e;
+                piece.style.left = (origLeft + touch.clientX - startX) + 'px'; piece.style.top = (origTop + touch.clientY - startY) + 'px';
+            };
+            const onUp = (e) => {
+                if(!isDragging) return; isDragging = false; piece.style.zIndex = 10;
+                const pr = piece.getBoundingClientRect(); const pCx = pr.left + pr.width/2, pCy = pr.top + pr.height/2;
+                let closest = null, minD = Infinity;
+                document.querySelectorAll('.grid-cell').forEach(cell => {
+                    const cr = cell.getBoundingClientRect(); const cCx = cr.left + cr.width/2, cCy = cr.top + cr.height/2;
+                    const d = Math.hypot(pCx - cCx, pCy - cCy); if(d < minD && d < pr.width){minD = d; closest = parseInt(cell.dataset.index);}
+                });
+                if(closest !== null) { 
+                    const c = document.querySelector('.grid-cell[data-index="'+closest+'"]');
+                    if(c) { piece.style.left = c.style.left; piece.style.top = c.style.top; }
+                    gameState.activeTaskPiece = pieceIndex; gameState.targetDropIndex = closest; gameState.taskAttempts = 0; 
+                    renderTaskPopup(document.getElementById('game-layer-play')); 
+                } 
+                else { piece.style.left = piece.dataset.startX + 'px'; piece.style.top = piece.dataset.startY + 'px'; }
+            };
+            piece.addEventListener('mousedown', onDown); document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+            piece.addEventListener('touchstart', onDown, {passive:false}); document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp);
+        }
+
+        let orderSequence = []; let activePair = null; let matchedPairs = 0;
+
+        function renderTaskPopup(layer) {
+            if(state.tasks.length === 0) { checkGameAnswer(true); return; }
+            const task = state.tasks[gameState.activeTaskPiece % state.tasks.length];
+            const popup = document.createElement('div'); popup.id = 'task-popup';
+            popup.style.position = 'absolute'; popup.style.left = '50%'; popup.style.top = '50%'; popup.style.transform = 'translate(-50%, -50%)';
+            popup.style.background = '#fff'; popup.style.padding = '35px'; popup.style.borderRadius = '24px'; popup.style.boxShadow = '0 20px 50px rgba(0,0,0,0.3)'; popup.style.zIndex = '100'; popup.style.minWidth = '350px'; popup.style.textAlign = 'center';
+            popup.style.border = '5px solid #4ECDC4';
+
+            let h = `<h3 style="margin-bottom:25px; font-family:'${state.styles.task.font}'; font-size:${state.styles.task.size}px; color:${state.styles.task.color};">${task.question}</h3><div style="display:flex; flex-direction:column; gap:12px; text-align:left;">`;
+            const opts = task.options || ['Нет вариантов'];
+            const corrArr = Array.isArray(task.correct) ? task.correct : [task.correct||'0'];
+            const styAns = `font-family:'${state.styles.ans.font}'; font-size:${state.styles.ans.size}px; color:${state.styles.ans.color};`;
+
+            if(task.type === '1') {
+                opts.forEach((o,i)=>{ h += `<button class="task-option-btn" style="${styAns}; padding:14px; font-weight:700; background:#f8fafc; border:2px solid #cbd5e1; border-radius:12px; cursor:pointer;" onclick="checkGameAnswer(${corrArr.includes(i.toString())})">${o}</button>`; });
+            } else if(task.type === '6') {
+                opts.forEach((o,i)=>{ h += `<button class="task-option-btn type6-btn" style="${styAns}; padding:14px; font-weight:700; background:#f8fafc; border:2px solid #cbd5e1; border-radius:12px; cursor:pointer;" onclick="handleOddClick(this, ${corrArr.includes(i.toString())})">${o}</button>`; });
+            } else if(task.type === '2') {
+                opts.forEach((o,i)=>{ h += `<label class="task-checkbox-label" style="${styAns}; display:flex; gap:10px; padding:10px; background:#f8fafc; border:2px solid #cbd5e1; border-radius:10px;"><input type="checkbox" id="chk_${i}"> ${o}</label>`; });
+                h += `<button onclick="checkMultiAns()" style="margin-top:15px; background:#FF6B6B; color:white; padding:12px; border-radius:12px; border:none; font-weight:bold; font-size:16px; cursor:pointer;">${getText('ansBtn')}</button>`;
+            } else if(task.type === '3') {
+                orderSequence = []; let shuffled = opts.map((v,i)=>({v,i})).sort(()=>Math.random()-0.5);
+                h += `<div id="order-box" style="min-height:50px; border:2px dashed #ccc; padding:10px; border-radius:12px; margin-bottom:15px; display:flex; flex-wrap:wrap; gap:5px;"></div><div id="word-bank" style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;">`;
+                shuffled.forEach(obj => { h += `<div class="task-order-btn" style="${styAns}; padding:10px 15px; background:#FFE66D; border-radius:10px; font-weight:800; cursor:pointer; border:2px solid #FFA502;" onclick="clickOrderWord(this, ${obj.i})">${obj.v}</div>`; });
+                h += `</div>`;
+            } else if(task.type === '4') {
+                h += `<select id="sel_ans" style="padding:12px; border-radius:12px; border:2px solid #ccc; width:100%; ${styAns}">`;
+                h += `<option value="" disabled selected>-- Выберите ответ --</option>`;
+                let shuffledOpts = opts.map((o,i)=>({o,i})).sort(()=>Math.random()-0.5);
+                shuffledOpts.forEach(obj => { h += `<option value="${obj.i}">${obj.o}</option>`; });
+                h += `</select><button onclick="checkGameAnswer(document.getElementById('sel_ans').value === '${corrArr[0]}')" style="margin-top:15px; background:#FF6B6B; color:white; padding:12px; border-radius:12px; border:none; font-weight:bold; font-size:16px; cursor:pointer;">${getText('ansBtn')}</button>`;
+            } else if(task.type === '5') {
+                activePair = null; matchedPairs = 0; let pairs = task.pairs || [{a:'A',b:'B'}];
+                let lefts = pairs.map((p,i)=>({t:p.a, i:i, s:'l'})).sort(()=>Math.random()-0.5);
+                let rights = pairs.map((p,i)=>({t:p.b, i:i, s:'r'})).sort(()=>Math.random()-0.5);
+                h += `<div style="display:flex; gap:20px;">`;
+                h += `<div style="flex:1; display:flex; flex-direction:column; gap:10px;">` + lefts.map((o,j) => `<div id="pl_${o.i}" class="task-pair-btn" style="${styAns}; padding:12px; background:#f8fafc; border:2px solid #cbd5e1; border-radius:10px; cursor:pointer; text-align:center;" onclick="clickPair(this, ${o.i}, 'l')">${o.t}</div>`).join('') + `</div>`;
+                h += `<div style="flex:1; display:flex; flex-direction:column; gap:10px;">` + rights.map((o,j) => `<div id="pr_${o.i}" class="task-pair-btn" style="${styAns}; padding:12px; background:#f8fafc; border:2px solid #cbd5e1; border-radius:10px; cursor:pointer; text-align:center;" onclick="clickPair(this, ${o.i}, 'r')">${o.t}</div>`).join('') + `</div>`;
+                h += `</div>`;
+            }
+            h += `</div>`; popup.innerHTML = h; layer.appendChild(popup);
+        }
+
+        window.handleOddClick = function(btn, isCorr) {
+            document.querySelectorAll('.type6-btn').forEach(b => b.style.pointerEvents = 'none');
+            if(isCorr) {
+                btn.style.backgroundColor = '#2ED573'; btn.style.color = 'white'; btn.style.borderColor = '#2ED573';
+                setTimeout(() => checkGameAnswer(true), 800);
+            } else {
+                btn.style.backgroundColor = '#FF4757'; btn.style.color = 'white'; btn.style.borderColor = '#FF4757';
+                setTimeout(() => {
+                    checkGameAnswer(false);
+                    document.querySelectorAll('.type6-btn').forEach(b => {
+                        b.style.pointerEvents = 'auto'; b.style.backgroundColor = '#f8fafc'; b.style.color = state.styles.ans.color; b.style.borderColor = '#cbd5e1';
+                    });
+                }, 800);
+            }
+        };
+
+        window.checkMultiAns = function() {
+            const task = state.tasks[gameState.activeTaskPiece % state.tasks.length];
+            const corrArr = Array.isArray(task.correct) ? task.correct : [task.correct||'0'];
+            let isCorrect = true; let checkedCount = 0;
+            task.options.forEach((o,i)=>{
+                let isChecked = document.getElementById('chk_'+i).checked;
+                if(isChecked) checkedCount++;
+                if(isChecked !== corrArr.includes(i.toString())) isCorrect = false;
+            });
+            if(corrArr.length === 0 && checkedCount === 0) isCorrect = true;
+            else if(corrArr.length > 0 && checkedCount === 0) isCorrect = false;
+            checkGameAnswer(isCorrect);
+        };
+
+        window.clickOrderWord = function(el, idx) {
+            document.getElementById('order-box').appendChild(el); el.onclick = null; orderSequence.push(idx.toString());
+            const task = state.tasks[gameState.activeTaskPiece % state.tasks.length];
+            if(orderSequence.length === task.options.length) {
+                let correct = true; for(let i=0; i<task.options.length; i++) if(orderSequence[i] !== i.toString()) correct = false;
+                if (correct) { setTimeout(()=>checkGameAnswer(true), 300); } 
+                else {
+                    playSound('wrong'); gameState.taskAttempts++;
+                    const popup = document.getElementById('task-popup');
+                    if(popup) { popup.classList.remove('shake'); void popup.offsetWidth; popup.classList.add('shake'); }
+                    setTimeout(() => {
+                        const box = document.getElementById('order-box'); const bank = document.getElementById('word-bank');
+                        if(box && bank) {
+                            box.innerHTML = ''; bank.innerHTML = ''; orderSequence = [];
+                            let shuffled = task.options.map((v,i)=>({v,i})).sort(()=>Math.random()-0.5);
+                            const styAns = `font-family:'${state.styles.ans.font}'; font-size:${state.styles.ans.size}px; color:${state.styles.ans.color};`;
+                            shuffled.forEach(obj => { bank.innerHTML += `<div class="task-order-btn" style="${styAns}; padding:10px 15px; background:#FFE66D; border-radius:10px; font-weight:800; cursor:pointer; border:2px solid #FFA502;" onclick="clickOrderWord(this, ${obj.i})">${obj.v}</div>`; });
+                        }
+                    }, 800);
+                }
+            }
+        };
+
+        window.clickPair = function(el, idx, side) {
+            if(activePair) {
+                if(activePair.side === side) { 
+                    document.getElementById('p'+activePair.side+'_'+activePair.idx).style.borderColor = '#cbd5e1'; el.style.borderColor = '#FF6B6B'; activePair = {idx, side};
+                } else { 
+                    const el1 = document.getElementById('p'+activePair.side+'_'+activePair.idx);
+                    if(activePair.idx === idx) {
+                        el1.style.borderColor = '#2ED573'; el1.style.background = '#e8f8f5'; el1.style.pointerEvents = 'none';
+                        el.style.borderColor = '#2ED573'; el.style.background = '#e8f8f5'; el.style.pointerEvents = 'none';
+                        matchedPairs++; activePair = null; playSound('correct');
+                        const task = state.tasks[gameState.activeTaskPiece % state.tasks.length];
+                        if(matchedPairs === task.pairs.length) setTimeout(()=>checkGameAnswer(true), 400);
+                    } else {
+                        el1.style.borderColor = '#cbd5e1'; activePair = null; checkGameAnswer(false); 
+                    }
+                }
+            } else { el.style.borderColor = '#FF6B6B'; activePair = {idx, side}; }
+        };
+
+        window.checkGameAnswer = function(isCorrect) {
+            if(isCorrect) {
+                playSound('correct');
+                const pId = gameState.activeTaskPiece; const targetId = gameState.targetDropIndex;
+                if(pId === targetId) {
+                    gameState.score += (gameState.taskAttempts === 0 ? state.scoreConfig.first : state.scoreConfig.next);
+                    if(gameState.taskAttempts === 0) gameState.correctCount++;
+                    
+                    const oldStartIdxOfA = gameState.shuffledOrder[pId]; const indexOfB = gameState.shuffledOrder.findIndex(val => val === pId);
+                    if (indexOfB !== -1) {
+                        gameState.shuffledOrder[indexOfB] = oldStartIdxOfA; gameState.shuffledOrder[pId] = pId;
+                        const pB = document.querySelector('.puzzle-piece[data-index="'+indexOfB+'"]');
+                        if (pB && !pB.classList.contains('solved')) {
+                            const board = document.getElementById('puzzle-board'); const count = parseInt(state.pieces);
+                            let cols=2,rows=2; if(count===6){cols=3;rows=2;} if(count===9){cols=3;rows=3;} if(count===12){cols=4;rows=3;}
+                            if(count===16){cols=4;rows=4;} if(count===20){cols=5;rows=4;} if(count===24){cols=6;rows=4;} if(count===25){cols=5;rows=5;} if(count===30){cols=6;rows=5;}
+                            const cw = board.offsetWidth/cols, ch = board.offsetHeight/rows;
+                            const sc = oldStartIdxOfA % cols, sr = Math.floor(oldStartIdxOfA / cols); const sx = sc * cw, sy = sr * ch;
+                            pB.dataset.startX = sx; pB.dataset.startY = sy; pB.style.left = sx + 'px'; pB.style.top = sy + 'px';
+                        }
+                    }
+                    gameState.solvedPieces.push(pId);
+                    const p = document.querySelector('.puzzle-piece[data-index="'+pId+'"]'); const c = document.querySelector('.grid-cell[data-index="'+pId+'"]');
+                    if(p && c) { p.classList.add('solved'); p.style.left=c.style.left; p.style.top=c.style.top; }
+                } else {
+                    gameState.score -= state.scoreConfig.penalty;
+                    const p = document.querySelector('.puzzle-piece[data-index="'+pId+'"]');
+                    if(p) { p.style.left = p.dataset.startX + 'px'; p.style.top = p.dataset.startY + 'px'; }
+                }
+                
+                const scoreEl = document.getElementById('ui-score'); if(scoreEl) scoreEl.innerText = '⭐ ' + getText('points') + ': '+gameState.score;
+                const pop = document.getElementById('task-popup'); if(pop) pop.remove();
+                gameState.activeTaskPiece = null;
+                checkSecEditor();
+                
+                if(gameState.solvedPieces.length >= parseInt(state.pieces)) {
+                    clearInterval(gameState.timerInterval); setTimeout(()=>document.querySelector('[data-mode="final"]').click(), 500);
+                }
+            } else {
+                playSound('wrong'); gameState.taskAttempts++;
+                const popup = document.getElementById('task-popup'); if(popup) { popup.classList.remove('shake'); void popup.offsetWidth; popup.classList.add('shake'); }
+                document.querySelectorAll('.task-pair-btn').forEach(b => { if(b.style.borderColor !== 'rgb(46, 213, 115)') b.style.borderColor = '#cbd5e1'; });
+                activePair = null;
+            }
+        };
+
+        function checkSecEditor() {
+            if (currentMode !== 'game') return;
+            const board = document.getElementById('puzzle-board'); if(!board) return;
+            const count = parseInt(state.pieces); 
+            let cols=2, rows=2; if(count===6){cols=3;rows=2;} if(count===9){cols=3;rows=3;} if(count===12){cols=4;rows=3;}
+            if(count===16){cols=4;rows=4;} if(count===20){cols=5;rows=4;} if(count===24){cols=6;rows=4;} if(count===25){cols=5;rows=5;} if(count===30){cols=6;rows=5;}
+            
+            state.secretAreas.forEach((area, idx) => {
+                if(area.polygon.length < 3 || !area.word) return;
+                let all=true, req=0;
+                
+                for(let i=0;i<count;i++){
+                    const cw_pct = 100 / cols;
+                    const ch_pct = 100 / rows;
+                    const cx = ((i % cols) * cw_pct) + (cw_pct / 2);
+                    const cy = (Math.floor(i / cols) * ch_pct) + (ch_pct / 2);
+                    
+                    const pts = [
+                        {x: cx, y: cy},
+                        {x: cx - cw_pct*0.4, y: cy - ch_pct*0.4}, {x: cx + cw_pct*0.4, y: cy - ch_pct*0.4},
+                        {x: cx - cw_pct*0.4, y: cy + ch_pct*0.4}, {x: cx + cw_pct*0.4, y: cy + ch_pct*0.4}
+                    ];
+                    
+                    let ins = false;
+                    for (let pt of pts) {
+                        let inside = false;
+                        for(let k=0,j=area.polygon.length-1; k<area.polygon.length; j=k++){
+                            let pk = area.polygon[k], pj = area.polygon[j];
+                            if(((pk.y>pt.y)!=(pj.y>pt.y)) && (pt.x<(pj.x-pk.x)*(pt.y-pk.y)/(pj.y-pk.y)+pk.x)) inside=!inside;
+                        }
+                        if (inside) { ins = true; break; }
+                    }
+                    if(ins){ req++; if(!gameState.solvedPieces.includes(i)) all=false; }
+                }
+                
+                const sec = document.getElementById('secret-word-card-'+idx);
+                if(sec) {
+                    if(req>0 && all) {
+                        if(sec.style.display !== 'block') {
+                            sec.style.display = 'block';
+                            sec.style.zIndex = '150';
+                            sec.classList.remove('shake'); void sec.offsetWidth; sec.classList.add('shake');
+                        }
+                    } else { sec.style.display = 'none'; }
+                }
+            });
+        }
+
+        // === EXPORT ===
+        document.getElementById('export-json').addEventListener('click', () => {
+            const dl = document.createElement('a'); dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state)); dl.download = "smart_puzzle.json"; document.body.appendChild(dl); dl.click(); dl.remove();
+        });
+
+        document.getElementById('import-json').addEventListener('change', (e) => {
+            const f = e.target.files[0]; if(!f) return;
+            const r = new FileReader(); r.onload = (ev) => { 
+                try { let parsed = JSON.parse(ev.target.result); state = mergeState(parsed); saveState(); syncUiWithState(); renderPreviewMode(); } catch(err){ console.error(err); } 
+            }; 
+            r.readAsText(f); e.target.value = '';
+        });
+
+        function generateStandaloneHTML() {
+            const stateStr = JSON.stringify(state).replace(/</g, '\\u003c');
+            return `<!DOCTYPE html>
+<html lang="${state.lang}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${state.startTitle}</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+    body, html { margin:0; padding:0; width:100%; height:100%; font-family:'Nunito', sans-serif; background:#e0f2fe; overflow:hidden; }
+    .layer { position:absolute; width:100%; height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+    #layer-play { z-index: 1; }
+    #layer-start { z-index: 100; background: ${state.startBgImage ? `url(${state.startBgImage})` : 'rgba(255, 255, 255, 0.95)'}; background-size: cover; background-position: center; }
+    #layer-final { z-index: 100; background: ${state.finalBgImage ? `url(${state.finalBgImage})` : 'rgba(255, 255, 255, 0.95)'}; background-size: cover; background-position: center; display: none; }
+    
+    .panel { background:${state.styles.panel.bg}; color:${state.styles.panel.color}; padding:45px; border-radius:${state.styles.panel.radius}px; text-align:center; box-shadow:0 15px 45px rgba(0,0,0,0.15); max-width: 90%; }
+    
+    #game-container { width: 100%; height: 100%; max-width: 1000px; max-height: 700px; background: white; position: relative; margin: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border-radius: 24px; border: 8px solid white; overflow: hidden; }
+    .game-layout { display:flex; width:100%; height:100%; padding:${state.styles.frame.padding}px; background:${state.styles.frame.color}; box-sizing:border-box; position:relative; align-items:center; justify-content:center; overflow:hidden; }
+    .puzzle-board { flex:1; width:100%; height:100%; position:relative; background:#ecf0f1; border:2px solid #bdc3c7; }
+    
+    .grid-cell { position:absolute; border:2px dashed rgba(0,0,0,0.1); box-sizing:border-box; }
+    .puzzle-piece { position:absolute; box-sizing:border-box; cursor:grab; background-repeat:no-repeat; box-shadow:3px 3px 15px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:26px; text-shadow:2px 2px 0px rgba(0,0,0,0.5); user-select:none; z-index:10; border:3px solid rgba(255,255,255,0.8); border-radius:10px; transition:transform 0.15s ease-out; }
+    .puzzle-piece:active { cursor:grabbing; z-index:50; transform:scale(1.05); transition:none; }
+    .puzzle-piece.solved { box-shadow:none; border:none; cursor:default; z-index:5; color:transparent; text-shadow:none; border-radius:0; }
+    
+    .drag-ui-el { position:absolute; z-index:60; font-weight:900; }
+    .drag-ui-el input[type=range] { cursor: pointer; accent-color: var(--primary); flex: 1; min-width: 50px; }
+    
+    .secret-word-card { position:absolute; color:#2F3542; font-weight:900; box-shadow:0 10px 25px rgba(0,0,0,0.25); z-index:70; display:none; text-align:center; border:4px solid #fff; text-transform: uppercase; transform: translate(-50%, -50%); transition: opacity 0.2s; }
+    .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake { 10%,90%{transform:translate(-50%,-50%) translateX(-4px);} 20%,80%{transform:translate(-50%,-50%) translateX(5px);} 30%,50%,70%{transform:translate(-50%,-50%) translateX(-8px);} 40%,60%{transform:translate(-50%,-50%) translateX(8px);} }
+    
+    #task-popup { border: 5px solid #4ECDC4; }
+    .task-option-btn { padding:14px; font-weight:700; background:#f8fafc; border:2px solid #cbd5e1; border-radius:12px; cursor:pointer; width:100%; text-align:left; transition:0.2s; }
+    .task-option-btn:hover { border-color:#4ECDC4; background:#f0fdfa; transform:scale(1.02); }
+    .task-checkbox-label { display:flex; align-items:center; gap:10px; font-weight:700; padding:10px; background:#f8fafc; border-radius:10px; border:2px solid #cbd5e1; cursor:pointer; }
+    .task-checkbox-label input { width:20px; height:20px; accent-color:#4ECDC4; }
+    .task-order-btn { display:inline-block; margin:5px; padding:10px 15px; background:#FFE66D; border-radius:10px; font-weight:800; cursor:pointer; border:2px solid #FFA502; transition:0.2s; }
+    .task-order-btn:hover { transform: translateY(-2px); }
+    .task-pair-btn { padding:12px; background:#f8fafc; border:2px solid #cbd5e1; border-radius:10px; cursor:pointer; font-weight:700; flex:1; text-align:center; transition:0.2s;}
+    .task-pair-btn.active { border-color:#FF6B6B; background:#ffefef; }
+    .task-pair-btn.matched { border-color:#2ED573; background:#e8f8f5; color:#2ED573; pointer-events:none; }
+</style>
+</head>
+<body>
+    <div id="layer-play" class="layer">
+        <div id="game-container">
+            <div class="game-layout">
+                <div id="board" class="puzzle-board"></div>
+            </div>
+        </div>
+    </div>
+    <div id="layer-start" class="layer">
+        <div class="panel">
+            <div id="t-start-logo"></div>
+            <h1 id="t-start-title"></h1><p id="t-start-text"></p>
+            <button onclick="startGame()" style="margin-top:20px; font-family:'${state.styles.uibtn.font}'; background:var(--primary); color:white; border:none; padding:12px 30px; font-size:18px; font-weight:800; border-radius:12px; cursor:pointer;" id="start-btn">Начать</button>
+        </div>
+    </div>
+    <div id="layer-final" class="layer">
+        <div class="panel" style="position:relative; z-index:110;">
+            <h1 id="t-final-title"></h1>
+            <h2 id="t-slogan" style="color:var(--primary); margin: 15px 0; font-size:32px; font-weight:900;"></h2>
+            <div id="t-reward" style="font-size: 60px; margin-bottom: 20px;"></div>
+            <p id="t-score" style="font-size: 24px; font-weight: 900;"></p>
+            <p id="t-correct" style="font-size: 18px; margin-bottom: 25px; color:inherit; opacity:0.8; font-weight:800;"></p>
+            <div id="qr-code" style="margin: 0 auto; display:flex; justify-content:center;"></div>
+        </div>
+    </div>
+
+<script>
+    const state = ${stateStr};
+    let solved = [], score = 0, activeP = null, targetD = null, attempts = 0, correctCount = 0;
+    let timer = state.timerType === 'countdown' ? parseInt(state.timerVal) : 0, timerInterval = null;
+    let bgmAudio = null, shuffledOrder = []; let globalVolume = 1.0;
+    
+    const i18n = {
+        ru: { btn: "Начать", pts: "Баллы", corr: "Верных ответов", timeOut: "Время вышло!", ansBtn: "Ответить" },
+        en: { btn: "Start", pts: "Score", corr: "Correct Answers", timeOut: "Time is up!", ansBtn: "Submit" },
+        de: { btn: "Start", pts: "Punkte", corr: "Richtige Antworten", timeOut: "Zeit abgelaufen!", ansBtn: "Antworten" },
+        fr: { btn: "Début", pts: "Score", corr: "Bonnes réponses", timeOut: "Temps écoulé!", ansBtn: "Valider" }
+    };
+    function t(k) { return i18n[state.lang][k] || i18n['en'][k] || k; }
+
+    function formatTime(sec) {
+        let m = Math.floor(sec/60).toString().padStart(2,'0'); let s = (sec%60).toString().padStart(2,'0'); return m+':'+s;
+    }
+    
+    function playSoundEffect(isCorrect) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        if (isCorrect) { osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.1); } 
+        else { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3); }
+        gain.gain.setValueAtTime(0.3 * globalVolume, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (isCorrect ? 0.5 : 0.3));
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    function init() {
+        const byId = (id) => document.getElementById(id);
+        const s = state.styles;
+        const setSty = (el, sty) => { el.style.fontFamily = sty.font; el.style.fontSize = sty.size+'px'; el.style.color = sty.color; };
+        
+        if (state.logoImage) { byId('t-start-logo').innerHTML = '<img src="'+state.logoImage+'" style="max-height:'+(state.startLogoSize || 120)+'px; margin-bottom:20px; border-radius:12px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">'; }
+        byId('t-start-title').innerText = state.startTitle; setSty(byId('t-start-title'), s.start);
+        byId('t-start-text').innerText = state.startText; setSty(byId('t-start-text'), {font: s.start.font, size: Math.max(12, s.start.size-6), color: s.start.color});
+        byId('t-final-title').innerText = state.finalTitle; setSty(byId('t-final-title'), s.fin);
+        byId('start-btn').innerText = t('btn');
+        
+        if (state.bgm) { bgmAudio = new Audio(state.bgm); bgmAudio.loop = true; bgmAudio.volume = globalVolume; }
+        
+        const count = parseInt(state.pieces);
+        shuffledOrder = Array.from({length: count}, (_, i) => i);
+        let isSorted = true;
+        while(isSorted && count > 1) {
+            for(let i = count - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]]; }
+            isSorted = shuffledOrder.every((val, i) => val === i);
+        }
+        buildGridSafe(); buildUI();
+    }
+
+    function applyUiBtnStyles(el) {
+        const s = state.styles.uibtn;
+        el.style.fontFamily = s.font; el.style.fontSize = s.size + 'px'; el.style.color = s.color; el.style.backgroundColor = s.bg;
+        el.style.width = s.width + 'px'; el.style.height = s.height + 'px';
+        el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
+        el.style.borderRadius = '16px'; el.style.border = '3px solid ' + s.color; el.style.boxSizing = 'border-box'; el.style.padding = '0 10px';
+    }
+
+    function buildUI() {
+        const targetLayer = document.getElementById('game-container');
+        if (state.logoImage) {
+            const logoEl = document.createElement('img'); logoEl.className = 'drag-ui-el'; logoEl.src = state.logoImage;
+            logoEl.style.left = state.uiPos.logo.x + '%'; logoEl.style.top = state.uiPos.logo.y + '%'; logoEl.style.width = state.uiPos.logo.size + '%';
+            targetLayer.appendChild(logoEl);
+        }
+        const scoreBoard = document.createElement('div'); scoreBoard.id = 'ui-score'; scoreBoard.className = 'drag-ui-el';
+        scoreBoard.innerText = '⭐ ' + t('pts') + ': 0';
+        scoreBoard.style.left = state.uiPos.score.x + '%'; scoreBoard.style.top = state.uiPos.score.y + '%';
+        applyUiBtnStyles(scoreBoard); targetLayer.appendChild(scoreBoard);
+        
+        if(state.timerType !== 'none') {
+            const timerBoard = document.createElement('div'); timerBoard.id = 'ui-timer'; timerBoard.className = 'drag-ui-el';
+            timerBoard.innerHTML = '⏱ <span style="margin-left:5px;">' + formatTime(timer) + '</span>';
+            timerBoard.style.left = state.uiPos.timer.x + '%'; timerBoard.style.top = state.uiPos.timer.y + '%';
+            applyUiBtnStyles(timerBoard); targetLayer.appendChild(timerBoard);
+        }
+
+        if (state.bgm) {
+            const volEl = document.createElement('div'); volEl.className = 'drag-ui-el';
+            volEl.style.left = state.uiPos.volume.x + '%'; volEl.style.top = state.uiPos.volume.y + '%';
+            volEl.innerHTML = '🔊 <input type="range" min="0" max="1" step="0.1" value="1" style="margin-left:8px; flex:1; min-width:50px;">';
+            volEl.querySelector('input').oninput = (e) => { globalVolume = e.target.value; if(bgmAudio) bgmAudio.volume = globalVolume; };
+            applyUiBtnStyles(volEl); targetLayer.appendChild(volEl);
+        }
+        
+        state.secretAreas.forEach((area, i) => {
+            if(area.polygon.length < 3 || !area.word) return;
+            const sec = document.createElement('div'); sec.id = 'secret-'+i; sec.className = 'secret-word-card';
+            sec.style.fontFamily = state.styles.secret.font; sec.style.fontSize = state.styles.secret.size + 'px';
+            sec.style.color = state.styles.secret.color; sec.style.background = state.styles.secret.bg;
+            sec.style.padding = state.styles.secret.padding + 'px ' + (state.styles.secret.padding * 2) + 'px'; sec.style.borderRadius = state.styles.secret.radius + 'px';
+            sec.innerText = area.word; sec.style.left = (area.cardPos ? area.cardPos.x : 50) + '%'; sec.style.top = (area.cardPos ? area.cardPos.y : 50) + '%';
+            targetLayer.appendChild(sec);
+        });
+    }
+
+    function buildGridSafe() {
+        const board = document.getElementById('board');
+        const bw = board.offsetWidth, bh = board.offsetHeight;
+        if (bw === 0) { setTimeout(buildGridSafe, 50); return; }
+        buildGrid(board, bw, bh);
+    }
+
+    function startGame() {
+        document.getElementById('layer-start').style.display='none';
+        if(bgmAudio) bgmAudio.play().catch(e=>console.log(e));
+        
+        if(state.timerType !== 'none') {
+            const td = document.getElementById('ui-timer');
+            timerInterval = setInterval(() => {
+                state.timerType === 'countdown' ? timer-- : timer++;
+                td.innerHTML = '⏱ <span style="margin-left:5px;">' + formatTime(timer) + '</span>';
+                if(state.timerType === 'countdown' && timer <= 0) { clearInterval(timerInterval); alert(t('timeOut')); finishGame(); }
+            }, 1000);
+        }
+    }
+
+    function buildGrid(board, bw, bh) {
+        board.innerHTML = ''; 
+        const count = parseInt(state.pieces); let cols = 2, rows = 2;
+        if(count===6){cols=3;rows=2;} if(count===9){cols=3;rows=3;} if(count===12){cols=4;rows=3;}
+        if(count===16){cols=4;rows=4;} if(count===20){cols=5;rows=4;} if(count===24){cols=6;rows=4;}
+        if(count===25){cols=5;rows=5;} if(count===30){cols=6;rows=5;}
+        
+        const cw = bw/cols, ch = bh/rows;
+        const labels = (state.labels || '').split(',').map(x=>x.trim());
+
+        for(let i=0; i<count; i++) {
+            const c = i % cols, r = Math.floor(i / cols);
+            const x = c * cw, y = r * ch;
+            
+            const cell = document.createElement('div'); cell.className='grid-cell';
+            cell.style.width=cw+'px'; cell.style.height=ch+'px'; cell.style.left=x+'px'; cell.style.top=y+'px';
+            cell.dataset.index = i; board.appendChild(cell);
+
+            const p = document.createElement('div'); p.className='puzzle-piece'; p.dataset.index = i; 
+            if(state.showLabels) p.innerText = labels[i]||(i+1);
+            if(state.bgImage) { p.style.backgroundImage = 'url('+state.bgImage+')'; p.style.backgroundSize = bw+'px '+bh+'px'; p.style.backgroundPosition = '-'+x+'px -'+y+'px'; }
+            else { p.style.backgroundColor = '#4A90E2'; }
+            
+            const startIdx = shuffledOrder[i]; const sc = startIdx % cols, sr = Math.floor(startIdx / cols); const sx = sc * cw, sy = sr * ch;
+
+            p.style.position = 'absolute'; p.style.width = cw+'px'; p.style.height = ch+'px';
+            p.style.left = sx+'px'; p.style.top = sy+'px'; p.dataset.startX = sx; p.dataset.startY = sy;
+            board.appendChild(p); setupDrag(p, board, cw, ch, i);
+        }
+    }
+
+    function setupDrag(p, board, tw, th, idx) {
+        let sx, sy, ox, oy, drag=false;
+        const onD = e => { 
+            if(activeP!==null || p.classList.contains('solved')) return; 
+            drag=true; const tc=e.touches?e.touches[0]:e; sx=tc.clientX; sy=tc.clientY; 
+            ox=parseFloat(p.style.left); oy=parseFloat(p.style.top); p.style.zIndex = 50; e.preventDefault();
+        };
+        const onM = e => { if(!drag)return; const tc=e.touches?e.touches[0]:e; p.style.left=(ox+tc.clientX-sx)+'px'; p.style.top=(oy+tc.clientY-sy)+'px'; };
+        const onU = e => { 
+            if(!drag)return; drag=false; p.style.zIndex = 10;
+            const pr=p.getBoundingClientRect(); const px=pr.left+pr.width/2, py=pr.top+pr.height/2;
+            let clos=null, md=Infinity;
+            document.querySelectorAll('.grid-cell').forEach(c=>{
+                const cr=c.getBoundingClientRect(); const cx=cr.left+cr.width/2, cy=cr.top+cr.height/2;
+                const d=Math.hypot(px-cx,py-cy); if(d<md && d<pr.width){md=d; clos=parseInt(c.dataset.index);}
+            });
+            if(clos!==null){ 
+                const c = document.querySelector('.grid-cell[data-index="'+clos+'"]');
+                if(c) { p.style.left=c.style.left; p.style.top=c.style.top; }
+                activeP=idx; targetD=clos; attempts=0; showPopup(); 
+            }
+            else { p.style.left=p.dataset.startX+'px'; p.style.top=p.dataset.startY+'px'; }
+        };
+        p.addEventListener('mousedown',onD); document.addEventListener('mousemove',onM); document.addEventListener('mouseup',onU);
+        p.addEventListener('touchstart',onD,{passive:false}); document.addEventListener('touchmove',onM,{passive:false}); document.addEventListener('touchend',onU);
+    }
+
+    let orderSequence = []; let activePair = null; let matchedPairs = 0;
+
+    function showPopup() {
+        if(!state.tasks || state.tasks.length===0){ checkAns(true); return; }
+        const task = state.tasks[activeP % state.tasks.length];
+        
+        const pop = document.createElement('div'); pop.id='t-pop';
+        pop.style.cssText = 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:#fff; padding:35px; border-radius:24px; box-shadow:0 20px 50px rgba(0,0,0,0.3); z-index:100; min-width:350px; text-align:center; border: 5px solid #4ECDC4;';
+        
+        let h = '<h3 style="margin-bottom:25px; font-family:'+state.styles.task.font+'; font-size:'+state.styles.task.size+'px; color:'+state.styles.task.color+';">'+task.question+'</h3><div style="display:flex; flex-direction:column; gap:12px; text-align:left;">';
+        
+        const opts = task.options || ['Нет вариантов'];
+        const corrArr = Array.isArray(task.correct) ? task.correct : [task.correct||'0'];
+        const styAns = 'font-family:'+state.styles.ans.font+'; font-size:'+state.styles.ans.size+'px; color:'+state.styles.ans.color+';';
+
+        if(task.type === '1') {
+            opts.forEach((o,i)=>{ h += '<button class="task-option-btn" style="'+styAns+'" onclick="checkAns('+(corrArr.includes(i.toString()))+')">'+o+'</button>'; });
+        } else if(task.type === '6') {
+            opts.forEach((o,i)=>{ h += '<button class="task-option-btn type6-btn" style="'+styAns+'" onclick="handleOddClick(this, '+(corrArr.includes(i.toString()))+')">'+o+'</button>'; });
+        } else if(task.type === '2') {
+            opts.forEach((o,i)=>{ h += '<label class="task-checkbox-label" style="'+styAns+'"><input type="checkbox" id="chk_'+i+'"> '+o+'</label>'; });
+            h += '<button onclick="checkMultiAns()" style="margin-top:15px; background:#FF6B6B; color:white; padding:12px; border-radius:12px; border:none; font-weight:bold; font-size:16px; cursor:pointer;">'+t('ansBtn')+'</button>';
+        } else if(task.type === '3') {
+            orderSequence = [];
+            let shuffled = opts.map((v,i)=>({v,i})).sort(()=>Math.random()-0.5);
+            h += '<div id="order-box" style="min-height:50px; border:2px dashed #ccc; padding:10px; border-radius:12px; margin-bottom:15px; display:flex; flex-wrap:wrap; gap:5px;"></div><div id="word-bank" style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;">';
+            shuffled.forEach(obj => { h += '<div class="task-order-btn" style="'+styAns+'" onclick="clickOrderWord(this, '+obj.i+')">'+obj.v+'</div>'; });
+            h += '</div>';
+        } else if(task.type === '4') {
+            h += '<select id="sel_ans" style="padding:12px; border-radius:12px; border:2px solid #ccc; width:100%; '+styAns+'">';
+            h += '<option value="" disabled selected>-- Выберите ответ --</option>';
+            let shuffledOpts = opts.map((o,i)=>({o,i})).sort(()=>Math.random()-0.5);
+            shuffledOpts.forEach(obj => { h += '<option value="'+obj.i+'">'+obj.o+'</option>'; });
+            h += '</select><button onclick="checkAns(document.getElementById(\\'sel_ans\\').value === \\''+corrArr[0]+'\\')" style="margin-top:15px; background:#FF6B6B; color:white; padding:12px; border-radius:12px; border:none; font-weight:bold; font-size:16px; cursor:pointer;">'+t('ansBtn')+'</button>';
+        } else if(task.type === '5') {
+            activePair = null; matchedPairs = 0;
+            let pairs = task.pairs || [{a:'A',b:'B'}];
+            let lefts = pairs.map((p,i)=>({t:p.a, i:i, s:'l'})).sort(()=>Math.random()-0.5);
+            let rights = pairs.map((p,i)=>({t:p.b, i:i, s:'r'})).sort(()=>Math.random()-0.5);
+            h += '<div style="display:flex; gap:20px;">';
+            h += '<div style="flex:1; display:flex; flex-direction:column; gap:10px;">' + lefts.map((o,j) => '<div id="pl_'+o.i+'" class="task-pair-btn" style="'+styAns+'" onclick="clickPair(this, '+o.i+', \\'l\\')">'+o.t+'</div>').join('') + '</div>';
+            h += '<div style="flex:1; display:flex; flex-direction:column; gap:10px;">' + rights.map((o,j) => '<div id="pr_'+o.i+'" class="task-pair-btn" style="'+styAns+'" onclick="clickPair(this, '+o.i+', \\'r\\')">'+o.t+'</div>').join('') + '</div>';
+            h += '</div>';
+        }
+
+        h += '</div>'; pop.innerHTML = h; document.getElementById('game-container').appendChild(pop);
+    }
+
+    window.handleOddClick = function(btn, isCorr) {
+        document.querySelectorAll('.type6-btn').forEach(b => b.style.pointerEvents = 'none');
+        if(isCorr) {
+            btn.style.backgroundColor = '#2ED573'; btn.style.color = 'white'; btn.style.borderColor = '#2ED573';
+            setTimeout(() => checkAns(true), 800);
+        } else {
+            btn.style.backgroundColor = '#FF4757'; btn.style.color = 'white'; btn.style.borderColor = '#FF4757';
+            setTimeout(() => {
+                checkAns(false);
+                document.querySelectorAll('.type6-btn').forEach(b => {
+                    b.style.pointerEvents = 'auto'; b.style.backgroundColor = '#f8fafc'; b.style.color = state.styles.ans.color; b.style.borderColor = '#cbd5e1';
+                });
+            }, 800);
+        }
+    };
+
+    window.checkMultiAns = function() {
+        const task = state.tasks[activeP % state.tasks.length];
+        const corrArr = Array.isArray(task.correct) ? task.correct : [task.correct||'0'];
+        let isCorrect = true; let checkedCount = 0;
+        task.options.forEach((o,i)=>{
+            let isChecked = document.getElementById('chk_'+i).checked;
+            if(isChecked) checkedCount++;
+            if(isChecked !== corrArr.includes(i.toString())) isCorrect = false;
+        });
+        if(corrArr.length === 0 && checkedCount === 0) isCorrect = true;
+        else if(corrArr.length > 0 && checkedCount === 0) isCorrect = false;
+        checkAns(isCorrect);
+    };
+
+    window.clickOrderWord = function(el, idx) {
+        document.getElementById('order-box').appendChild(el);
+        el.onclick = null;
+        orderSequence.push(idx.toString());
+        const task = state.tasks[activeP % state.tasks.length];
+        if(orderSequence.length === task.options.length) {
+            let correct = true;
+            for(let i=0; i<task.options.length; i++) if(orderSequence[i] !== i.toString()) correct = false;
+            
+            if(correct) {
+                setTimeout(()=>checkAns(true), 300);
+            } else {
+                playSoundEffect(false); 
+                attempts++;
+                const p = document.getElementById('t-pop');
+                if(p) { p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake'); }
+                
+                setTimeout(() => {
+                    const box = document.getElementById('order-box');
+                    const bank = document.getElementById('word-bank');
+                    if(box && bank) {
+                        box.innerHTML = ''; bank.innerHTML = '';
+                        orderSequence = [];
+                        let shuffled = task.options.map((v,i)=>({v,i})).sort(()=>Math.random()-0.5);
+                        const styAns = 'font-family:'+state.styles.ans.font+'; font-size:'+state.styles.ans.size+'px; color:'+state.styles.ans.color+';';
+                        shuffled.forEach(obj => { 
+                            bank.innerHTML += '<div class="task-order-btn" style="'+styAns+'" onclick="clickOrderWord(this, '+obj.i+')">'+obj.v+'</div>'; 
+                        });
+                    }
+                }, 800);
+            }
+        }
+    };
+
+    window.clickPair = function(el, idx, side) {
+        if(activePair) {
+            if(activePair.side === side) { 
+                document.getElementById('p'+activePair.side+'_'+activePair.idx).style.borderColor = '#cbd5e1';
+                el.style.borderColor = '#FF6B6B'; activePair = {idx, side};
+            } else { 
+                const el1 = document.getElementById('p'+activePair.side+'_'+activePair.idx);
+                if(activePair.idx === idx) {
+                    el1.style.borderColor = '#2ED573'; el1.style.background = '#e8f8f5'; el1.style.pointerEvents = 'none';
+                    el.style.borderColor = '#2ED573'; el.style.background = '#e8f8f5'; el.style.pointerEvents = 'none';
+                    matchedPairs++; activePair = null; playSoundEffect(true);
+                    const task = state.tasks[activeP % state.tasks.length];
+                    if(matchedPairs === task.pairs.length) setTimeout(()=>checkAns(true), 400);
+                } else {
+                    el1.style.borderColor = '#cbd5e1'; activePair = null; checkAns(false);
+                }
+            }
+        } else {
+            el.style.borderColor = '#FF6B6B'; activePair = {idx, side};
+        }
+    };
+
+    function checkAns(corr) {
+        playSoundEffect(corr);
+        if(corr) {
+            if(activeP === targetD) { 
+                score += (attempts===0?state.scoreConfig.first:state.scoreConfig.next); 
+                if(attempts===0) correctCount++;
+                const oldStartIdxOfA = shuffledOrder[activeP]; const indexOfB = shuffledOrder.findIndex(val => val === activeP);
+                if (indexOfB !== -1) {
+                    shuffledOrder[indexOfB] = oldStartIdxOfA; shuffledOrder[activeP] = activeP;
+                    const pB = document.querySelector('.puzzle-piece[data-index="'+indexOfB+'"]');
+                    if (pB && !pB.classList.contains('solved')) {
+                        const board = document.getElementById('board'); const count = parseInt(state.pieces);
+                        let cols=2,rows=2; if(count===6){cols=3;rows=2;} if(count===9){cols=3;rows=3;} if(count===12){cols=4;rows=3;}
+                        if(count===16){cols=4;rows=4;} if(count===20){cols=5;rows=4;} if(count===24){cols=6;rows=4;} if(count===25){cols=5;rows=5;} if(count===30){cols=6;rows=5;}
+                        const cw = board.offsetWidth/cols, ch = board.offsetHeight/rows;
+                        const sc = oldStartIdxOfA % cols, sr = Math.floor(oldStartIdxOfA / cols); const sx = sc * cw, sy = sr * ch;
+                        pB.dataset.startX = sx; pB.dataset.startY = sy; pB.style.left = sx + 'px'; pB.style.top = sy + 'px';
+                    }
+                }
+                solved.push(activeP); lockP(activeP); 
+            } else { 
+                score -= state.scoreConfig.penalty; 
+                const p = document.querySelector('.puzzle-piece[data-index="'+activeP+'"]'); 
+                p.style.left = p.dataset.startX + 'px'; p.style.top = p.dataset.startY + 'px'; 
+            }
+            document.getElementById('ui-score').innerText = '⭐ ' + t('pts') + ': '+score;
+            const tPop = document.getElementById('t-pop'); if(tPop) tPop.remove(); 
+            activeP=null;
+            checkSec();
+            if(solved.length >= parseInt(state.pieces)) {
+                clearInterval(timerInterval); setTimeout(finishGame, 500);
+            }
+        } else {
+            attempts++; const p=document.getElementById('t-pop'); if(p) { p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake'); }
+            document.querySelectorAll('.task-pair-btn').forEach(b => { if(b.style.borderColor !== 'rgb(46, 213, 115)') b.style.borderColor = '#cbd5e1'; });
+            activePair = null;
+        }
+    }
+
+    function lockP(idx) {
+        const p = document.querySelector('.puzzle-piece[data-index="'+idx+'"]');
+        const c = document.querySelector('.grid-cell[data-index="'+idx+'"]');
+        if(p && c) { p.classList.add('solved'); p.style.left=c.style.left; p.style.top=c.style.top; }
+    }
+
+    function finishGame() {
+        document.getElementById('layer-final').style.display='flex';
+        document.getElementById('t-slogan').innerText = state.slogan;
+        document.getElementById('t-reward').innerText = state.reward;
+        document.getElementById('t-score').innerText = '⭐ ' + t('pts') + ': ' + score;
+        document.getElementById('t-correct').innerText = '🎯 ' + t('corr') + ' ' + correctCount + ' / ' + state.pieces;
+        
+        const qrData = encodeURIComponent("Очки: " + score + " | Верных: " + correctCount + "/" + state.pieces + " | Дата: " + new Date().toLocaleDateString());
+        document.getElementById("qr-code").innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' + qrData + '" alt="QR" style="border-radius:12px;">';
+    }
+
+    function checkSec() {
+        const b = document.getElementById('board'); if(!b) return;
+        const count = parseInt(state.pieces); let cols=2, rows=2; if(count===6){cols=3;rows=2;} if(count===9){cols=3;rows=3;} if(count===12){cols=4;rows=3;}
+        if(count===16){cols=4;rows=4;} if(count===20){cols=5;rows=4;} if(count===24){cols=6;rows=4;} if(count===25){cols=5;rows=5;} if(count===30){cols=6;rows=5;}
+        
+        state.secretAreas.forEach((area, idx) => {
+            if(area.polygon.length < 3 || !area.word) return;
+            let all=true, req=0;
+            for(let i=0;i<count;i++){
+                const cw_pct = 100 / cols;
+                const ch_pct = 100 / rows;
+                const cx = ((i % cols) * cw_pct) + (cw_pct / 2);
+                const cy = (Math.floor(i / cols) * ch_pct) + (ch_pct / 2);
+                
+                const pts = [
+                    {x: cx, y: cy},
+                    {x: cx - cw_pct*0.4, y: cy - ch_pct*0.4}, {x: cx + cw_pct*0.4, y: cy - ch_pct*0.4},
+                    {x: cx - cw_pct*0.4, y: cy + ch_pct*0.4}, {x: cx + cw_pct*0.4, y: cy + ch_pct*0.4}
+                ];
+                
+                let ins = false;
+                for (let pt of pts) {
+                    let inside = false;
+                    for(let k=0,j=area.polygon.length-1; k<area.polygon.length; j=k++){
+                        let pk = area.polygon[k], pj = area.polygon[j];
+                        if(((pk.y>pt.y)!=(pj.y>pt.y)) && (pt.x<(pj.x-pk.x)*(pt.y-pk.y)/(pj.y-pk.y)+pk.x)) inside=!inside;
+                    }
+                    if (inside) { ins = true; break; }
+                }
+                if(ins){ req++; if(!solved.includes(i)) all=false; }
+            }
+            const sec = document.getElementById('secret-'+idx);
+            if(sec) {
+                if(req>0 && all) {
+                    if(sec.style.display !== 'block') {
+                        sec.style.display = 'block';
+                        sec.style.zIndex = '150';
+                        sec.classList.remove('shake'); void sec.offsetWidth; sec.classList.add('shake');
+                    }
+                } else { sec.style.display = 'none'; }
+            }
+        });
+    }
+
+    window.onload = init;
+<\/script></body></html>`;
+        }
+
+        document.getElementById('export-html').addEventListener('click', () => {
+            const htmlContent = generateStandaloneHTML();
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "smart_puzzle.html";
+            document.body.appendChild(a); a.click(); a.remove();
+        });
+
+        document.getElementById('export-genially').addEventListener('click', () => {
+            const htmlContent = generateStandaloneHTML();
+            function encodeHTML(str) {
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+            const iframe = `<iframe srcdoc="${encodeHTML(htmlContent)}" style="width:100%; height:600px; min-height:600px; border:none; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1);" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups"></iframe>`;
+            document.getElementById('code-modal-content').value = iframe;
+            document.getElementById('code-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('copy-code-btn').addEventListener('click', () => {
+            document.getElementById('code-modal-content').select(); document.execCommand('copy'); alert(getText('copyBtn') + ' OK!');
+        });
+
+        window.addEventListener('DOMContentLoaded', () => { 
+            loadState(); syncUiWithState(); initListeners(); shufflePieces(); renderPreviewMode(); 
+        });
+    </script>
+</body>
+</html>
