@@ -1845,5 +1845,17 @@
             loadState(); syncUiWithState(); initListeners(); shufflePieces(); renderPreviewMode(); 
         });
     </script>
+    <script>
+// ==== Мост Quest Studio ====
+window.addEventListener('message', function (event) {
+  if (!event.data || event.data.type !== 'quest-builder:get-game') return;
+  try {
+    var fullHTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    event.source.postMessage({ type: 'quest-builder:game', html: fullHTML }, '*');
+  } catch (err) {
+    event.source.postMessage({ type: 'quest-builder:game-error', message: String(err) }, '*');
+  }
+});
+</script>
 </body>
 </html>
